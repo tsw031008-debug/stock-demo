@@ -1,0 +1,78 @@
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  error:
+    include-message: never
+    include-stacktrace: never
+
+spring:
+  application:
+    name: stock-demo
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL:jdbc:mysql://localhost:3306/stock_demo?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+    hikari:
+      minimum-idle: ${DB_MINIMUM_IDLE:2}
+      maximum-pool-size: ${DB_MAXIMUM_POOL_SIZE:10}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT:30000}
+      validation-timeout: 5000
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+      password: ${REDIS_PASSWORD:123456}
+      timeout: ${REDIS_TIMEOUT:3s}
+      lettuce:
+        pool:
+          max-active: ${REDIS_MAX_ACTIVE:8}
+          max-idle: ${REDIS_MAX_IDLE:8}
+          min-idle: ${REDIS_MIN_IDLE:0}
+          max-wait: ${REDIS_MAX_WAIT:3s}
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: cn.djct.stockdemo
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    call-setters-on-nulls: true
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /swagger-ui.html
+    display-request-duration: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: ${ROOT_LOG_LEVEL:INFO}
+    cn.djct.stockdemo: ${APP_LOG_LEVEL:INFO}
+

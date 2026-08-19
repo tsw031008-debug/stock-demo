@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local runtime ###
+.env
+logs/
+src/main/resources/application-local.yml

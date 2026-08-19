@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.djct.stockdemo.mapper.TradeCalendarMapper">
+    <resultMap id="TradeCalendarResultMap" type="cn.djct.stockdemo.pojo.entity.TradeCalendar">
+        <id property="id" column="id"/>
+        <result property="marketCode" column="market_code"/>
+        <result property="tradeDate" column="trade_date"/>
+        <result property="isTradingDay" column="is_trading_day"/>
+        <result property="dayType" column="day_type"/>
+        <result property="holidayName" column="holiday_name"/>
+        <result property="sourceTitle" column="source_title"/>
+        <result property="sourceUrl" column="source_url"/>
+        <result property="isManualAdjusted" column="is_manual_adjusted"/>
+        <result property="remark" column="remark"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!--批量新增或更新交易日历。-->
+    <insert id="insertBatch">
+        INSERT INTO trade_calendar (
+            market_code,
+            trade_date,
+            is_trading_day,
+            day_type,
+            holiday_name,
+            source_title,
+            source_url,
+            is_manual_adjusted,
+            remark
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.marketCode},
+            #{item.tradeDate},
+            #{item.isTradingDay},
+            #{item.dayType},
+            #{item.holidayName},
+            #{item.sourceTitle},
+            #{item.sourceUrl},
+            #{item.isManualAdjusted},
+            #{item.remark}
+            )
+        </foreach>
+    </insert>
+
+    <!--查询指定市场某一天的交易日历。-->
+    <select id="selectByMarketCodeAndTradeDate" resultMap="TradeCalendarResultMap">
+        SELECT
+            id,
+            market_code,
+            trade_date,
+            is_trading_day,
+            day_type,
+            holiday_name,
+            source_title,
+            source_url,
+            is_manual_adjusted,
+            remark,
+            created_at,
+            updated_at
+        FROM trade_calendar
+        WHERE
+            market_code = #{marketCode}
+            AND trade_date = #{tradeDate}
+    </select>
+
+    <!--查询指定日期之前的第n个交易日-->
+    <select id="selectPreviousTradingDate" resultType="java.time.LocalDate">
+        SELECT
+            trade_date
+        FROM trade_calendar
+        WHERE market_code = #{marketCode}
+            AND trade_date &lt; #{tradeDate}
+            AND is_trading_day = 1
+        ORDER BY trade_date DESC
+        LIMIT #{offset}, 1
+    </select>
+
+    <!--查询指定日期之后的第N个交易日-->
+    <select id="selectNextTradingDate" resultType="java.time.LocalDate">
+        SELECT trade_date
+        FROM trade_calendar
+        WHERE market_code = #{marketCode}
+            AND trade_date &gt; #{tradeDate}
+            AND is_trading_day = 1
+        ORDER BY trade_date ASC
+        LIMIT #{offset}, 1
+    </select>
+</mapper>
