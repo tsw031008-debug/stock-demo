@@ -9,8 +9,6 @@ import java.util.List;
 
 /**
  * 交易日历数据访问接口。
- *
- * TODO 在对应的 Mapper XML 中编写全部 SQL。
  */
 @Mapper
 public interface TradeCalendarMapper {
@@ -46,9 +44,18 @@ public interface TradeCalendarMapper {
     );
 
     /**
-     * 批量新增或更新交易日历。
+     * 批量新增交易日历。
      */
     int insertBatch(
             @Param("list") List<TradeCalendar> calendars
+    );
+
+    /**
+     * 统计指定市场、日期范围内已有的数据量。
+     */
+    int countByMarketCodeAndDateRange(
+            @Param("marketCode") String marketCode,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
     );
 }

@@ -18,7 +18,7 @@
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
-    <!--批量新增或更新交易日历。-->
+    <!--批量新增交易日历。-->
     <insert id="insertBatch">
         INSERT INTO trade_calendar (
             market_code,
@@ -38,11 +38,11 @@
             #{item.tradeDate},
             #{item.isTradingDay},
             #{item.dayType},
-            #{item.holidayName},
-            #{item.sourceTitle},
-            #{item.sourceUrl},
+            #{item.holidayName,jdbcType=VARCHAR},
+            #{item.sourceTitle,jdbcType=VARCHAR},
+            #{item.sourceUrl,jdbcType=VARCHAR},
             #{item.isManualAdjusted},
-            #{item.remark}
+            #{item.remark,jdbcType=VARCHAR}
             )
         </foreach>
     </insert>
@@ -66,6 +66,7 @@
         WHERE
             market_code = #{marketCode}
             AND trade_date = #{tradeDate}
+        LIMIT 1
     </select>
 
     <!--查询指定日期之前的第n个交易日-->
@@ -89,5 +90,13 @@
             AND is_trading_day = 1
         ORDER BY trade_date ASC
         LIMIT #{offset}, 1
+    </select>
+
+    <!--统计指定市场、日期范围内已有的数据量。-->
+    <select id="countByMarketCodeAndDateRange" resultType="int">
+        SELECT COUNT(*)
+        FROM trade_calendar
+        WHERE market_code = #{marketCode}
+            AND trade_date BETWEEN #{startDate} AND #{endDate}
     </select>
 </mapper>

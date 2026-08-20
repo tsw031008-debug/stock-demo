@@ -36,7 +36,7 @@ spring:
           min-idle: ${REDIS_MIN_IDLE:0}
           max-wait: ${REDIS_MAX_WAIT:3s}
   flyway:
-    enabled: ${FLYWAY_ENABLED:true}
+    enabled: ${FLYWAY_ENABLED:false}
     locations: classpath:db/migration
     baseline-on-migrate: false
     validate-on-migrate: true
@@ -63,6 +63,9 @@ springdoc:
     display-request-duration: true
 
 management:
+  health:
+    redis:
+      enabled: ${REDIS_HEALTH_ENABLED:false}
   endpoints:
     web:
       exposure:
@@ -75,4 +78,3 @@ logging:
   level:
     root: ${ROOT_LOG_LEVEL:INFO}
     cn.djct.stockdemo: ${APP_LOG_LEVEL:INFO}
-

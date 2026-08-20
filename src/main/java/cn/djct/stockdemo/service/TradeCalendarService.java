@@ -6,6 +6,14 @@ import java.time.LocalDate;
  * 交易日历服务。
  */
 public interface TradeCalendarService {
+
+    /**
+     * 初始化指定日期范围内的A股交易日历。
+     *
+     * @return 实际新增数量
+     */
+    int initialize(LocalDate startDate, LocalDate endDate);
+
     /**
      * 判断指定日期是否为A股交易日。
      */
