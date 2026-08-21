@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.djct.stockdemo.mapper.StockDailyQuoteMapper">
+
+    <select id="countByTradeDate" resultType="int">
+        SELECT COUNT(*)
+        FROM stock_daily_quote
+        WHERE trade_date = #{tradeDate}
+    </select>
+
+    <insert id="upsertBatch">
+        INSERT INTO stock_daily_quote (
+            stock_code,
+            stock_name,
+            trade_date,
+            quote_time,
+            close_price,
+            previous_close_price,
+            open_price,
+            high_price,
+            low_price,
+            volume_hand,
+            turnover_amount_yuan,
+            bid1_price,
+            bid1_volume_hand,
+            ask1_price,
+            ask1_volume_hand,
+            change_percent,
+            amplitude_percent,
+            turnover_rate,
+            pe_ratio,
+            pb_ratio,
+            circulating_market_cap_yuan,
+            total_market_cap_yuan,
+            data_source,
+            data_status,
+            collected_at
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.stockCode},
+            #{item.stockName},
+            #{item.tradeDate},
+            #{item.quoteTime},
+            #{item.closePrice},
+            #{item.previousClosePrice},
+            #{item.openPrice},
+            #{item.highPrice},
+            #{item.lowPrice},
+            #{item.volumeHand},
+            #{item.turnoverAmountYuan},
+            #{item.bid1Price},
+            #{item.bid1VolumeHand},
+            #{item.ask1Price},
+            #{item.ask1VolumeHand},
+            #{item.changePercent},
+            #{item.amplitudePercent},
+            #{item.turnoverRate},
+            #{item.peRatio},
+            #{item.pbRatio},
+            #{item.circulatingMarketCapYuan},
+            #{item.totalMarketCapYuan},
+            #{item.dataSource},
+            #{item.dataStatus},
+            #{item.collectedAt}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            stock_name = VALUES(stock_name),
+            quote_time = VALUES(quote_time),
+            close_price = VALUES(close_price),
+            previous_close_price = VALUES(previous_close_price),
+            open_price = VALUES(open_price),
+            high_price = VALUES(high_price),
+            low_price = VALUES(low_price),
+            volume_hand = VALUES(volume_hand),
+            turnover_amount_yuan = VALUES(turnover_amount_yuan),
+            bid1_price = VALUES(bid1_price),
+            bid1_volume_hand = VALUES(bid1_volume_hand),
+            ask1_price = VALUES(ask1_price),
+            ask1_volume_hand = VALUES(ask1_volume_hand),
+            change_percent = VALUES(change_percent),
+            amplitude_percent = VALUES(amplitude_percent),
+            turnover_rate = VALUES(turnover_rate),
+            pe_ratio = VALUES(pe_ratio),
+            pb_ratio = VALUES(pb_ratio),
+            circulating_market_cap_yuan = VALUES(circulating_market_cap_yuan),
+            total_market_cap_yuan = VALUES(total_market_cap_yuan),
+            data_source = VALUES(data_source),
+            data_status = VALUES(data_status),
+            collected_at = VALUES(collected_at),
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+</mapper>

@@ -22,3 +22,10 @@ logging:
     root: WARN
     cn.djct.stockdemo: INFO
 
+stock:
+  basic:
+    sync:
+      enabled: false
+  daily-quote:
+    sync:
+      enabled: false

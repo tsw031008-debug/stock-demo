@@ -1,6 +1,8 @@
 package cn.djct.stockdemo.controller;
 
 import cn.djct.stockdemo.mapper.NationalHolidayMapper;
+import cn.djct.stockdemo.mapper.StockBasicMapper;
+import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.TradeCalendarMapper;
 import cn.djct.stockdemo.service.TradeCalendarService;
 import org.junit.jupiter.api.Test;
@@ -35,6 +37,12 @@ class TradeCalendarControllerTest {
 
     @MockBean
     private TradeCalendarMapper tradeCalendarMapper;
+
+    @MockBean
+    private StockBasicMapper stockBasicMapper;
+
+    @MockBean
+    private StockDailyQuoteMapper stockDailyQuoteMapper;
 
     @Test
     void shouldReturnTradingDayResult() throws Exception {

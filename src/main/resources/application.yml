@@ -78,3 +78,26 @@ logging:
   level:
     root: ${ROOT_LOG_LEVEL:INFO}
     cn.djct.stockdemo: ${APP_LOG_LEVEL:INFO}
+
+stock:
+  basic:
+    source:
+      count-url: ${STOCK_BASIC_SOURCE_COUNT_URL:https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeStockCount}
+      list-url: ${STOCK_BASIC_SOURCE_LIST_URL:https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData}
+      page-size: ${STOCK_BASIC_SOURCE_PAGE_SIZE:100}
+      connect-timeout: ${STOCK_BASIC_SOURCE_CONNECT_TIMEOUT:5s}
+      read-timeout: ${STOCK_BASIC_SOURCE_READ_TIMEOUT:10s}
+      request-interval: ${STOCK_BASIC_SOURCE_REQUEST_INTERVAL:1s}
+    sync:
+      enabled: ${STOCK_BASIC_SYNC_ENABLED:true}
+      cron: ${STOCK_BASIC_SYNC_CRON:0 10 9 * * *}
+      minimum-stock-count: ${STOCK_BASIC_MINIMUM_STOCK_COUNT:3000}
+  daily-quote:
+    source:
+      url: ${STOCK_DAILY_QUOTE_SOURCE_URL:http://qt.gtimg.cn/q=}
+      connect-timeout: ${STOCK_DAILY_QUOTE_SOURCE_CONNECT_TIMEOUT:5s}
+      read-timeout: ${STOCK_DAILY_QUOTE_SOURCE_READ_TIMEOUT:10s}
+      request-interval: ${STOCK_DAILY_QUOTE_SOURCE_REQUEST_INTERVAL:1s}
+    sync:
+      enabled: ${STOCK_DAILY_QUOTE_SYNC_ENABLED:true}
+      cron: ${STOCK_DAILY_QUOTE_SYNC_CRON:0 2 15 * * *}
