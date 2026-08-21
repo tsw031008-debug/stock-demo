@@ -13,15 +13,36 @@ import java.util.List;
 @Mapper
 public interface StockBasicMapper {
 
+    /**
+     * 根据最后 seen 交易日期统计股票数量。
+      * @param tradeDate 交易日期
+      * @return 股票数量
+     */
     int countByLastSeenTradeDate(@Param("tradeDate") LocalDate tradeDate);
 
+    /**
+     * 统计最新股票快照数量。
+      * @return 股票快照数量
+     */
     int countLatestSnapshot();
 
+    /**
+     * 根据交易日期、股票代码和批次大小，分批获取股票快照。
+      * @param tradeDate 交易日期
+      * @param lastStockCode 上一股票代码
+      * @param limit 批次大小
+      * @return 股票快照
+     */
     List<StockBasic> selectSnapshotAfterCode(
             @Param("tradeDate") LocalDate tradeDate,
             @Param("lastStockCode") String lastStockCode,
             @Param("limit") int limit
     );
 
+    /**
+     * 批量插入或更新股票快照。
+      * @param stocks 股票快照列表
+      * @return 影响行数
+     */
     int upsertBatch(@Param("list") List<StockBasic> stocks);
 }

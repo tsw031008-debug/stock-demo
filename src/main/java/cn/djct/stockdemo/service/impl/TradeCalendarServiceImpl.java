@@ -36,6 +36,12 @@ public class TradeCalendarServiceImpl implements TradeCalendarService {
 
     private final TradeCalendarDataInitializer tradeCalendarDataInitializer;
 
+    /**
+     * 初始化交易日历数据。
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @return 影响行数
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int initialize(LocalDate startDate, LocalDate endDate) {
@@ -95,6 +101,12 @@ public class TradeCalendarServiceImpl implements TradeCalendarService {
         return insertedCount;
     }
 
+    /**
+     * 判断指定日期是否是交易日。
+     *
+     * @param date 日期
+     * @return 是否是交易日
+     */
     @Override
     public boolean isTradingDay(LocalDate date) {
         //参数校验

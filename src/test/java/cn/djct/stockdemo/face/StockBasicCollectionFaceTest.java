@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,7 +32,7 @@ class StockBasicCollectionFaceTest {
     void shouldSkipNetworkRequestWhenTodayHasAlreadyBeenSynchronized() {
         LocalDate tradeDate = LocalDate.of(2026, 8, 20);
         when(stockBasicService.hasSynchronized(tradeDate)).thenReturn(true);
-        StockBasicCollectionFace collectionFace = createCollectionFace(1);
+        StockBasicCollectionFace collectionFace = createCollectionFace();
 
         assertEquals(0, collectionFace.synchronize(tradeDate));
 
@@ -42,18 +43,14 @@ class StockBasicCollectionFaceTest {
     @Test
     void shouldSaveEveryStockReturnedByTheSource() {
         LocalDate tradeDate = LocalDate.of(2026, 8, 20);
-        List<StockBasicDto> stocks = List.of(
-                new StockBasicDto("600000", "浦发银行"),
-                new StockBasicDto("000001", "平安银行"),
-                new StockBasicDto("920001", "北交样本")
-        );
+        List<StockBasicDto> stocks = createStocks(3000);
         when(stockBasicService.hasSynchronized(tradeDate)).thenReturn(false);
         when(stockBasicSourceService.fetchAll()).thenReturn(stocks);
-        when(stockBasicService.countLatestSnapshot()).thenReturn(3);
-        when(stockBasicService.saveSnapshot(tradeDate, stocks)).thenReturn(3);
-        StockBasicCollectionFace collectionFace = createCollectionFace(1);
+        when(stockBasicService.countLatestSnapshot()).thenReturn(3000);
+        when(stockBasicService.saveSnapshot(tradeDate, stocks)).thenReturn(3000);
+        StockBasicCollectionFace collectionFace = createCollectionFace();
 
-        assertEquals(3, collectionFace.synchronize(tradeDate));
+        assertEquals(3000, collectionFace.synchronize(tradeDate));
 
         verify(stockBasicService).saveSnapshot(tradeDate, stocks);
     }
@@ -61,14 +58,12 @@ class StockBasicCollectionFaceTest {
     @Test
     void shouldRejectDuplicateStockCodes() {
         LocalDate tradeDate = LocalDate.of(2026, 8, 20);
-        List<StockBasicDto> stocks = List.of(
-                new StockBasicDto("600000", "浦发银行"),
-                new StockBasicDto("600000", "重复样本")
-        );
+        List<StockBasicDto> stocks = createStocks(3000);
+        stocks.set(2999, new StockBasicDto("000001", "重复样本"));
         when(stockBasicService.hasSynchronized(tradeDate)).thenReturn(false);
         when(stockBasicSourceService.fetchAll()).thenReturn(stocks);
         when(stockBasicService.countLatestSnapshot()).thenReturn(0);
-        StockBasicCollectionFace collectionFace = createCollectionFace(1);
+        StockBasicCollectionFace collectionFace = createCollectionFace();
 
         assertThrows(IllegalStateException.class, () -> collectionFace.synchronize(tradeDate));
 
@@ -78,25 +73,44 @@ class StockBasicCollectionFaceTest {
     @Test
     void shouldRejectAnAbnormalDropFromTheLatestSnapshot() {
         LocalDate tradeDate = LocalDate.of(2026, 8, 20);
-        List<StockBasicDto> stocks = List.of(
-                new StockBasicDto("600000", "浦发银行"),
-                new StockBasicDto("000001", "平安银行")
-        );
+        List<StockBasicDto> stocks = createStocks(3000);
         when(stockBasicService.hasSynchronized(tradeDate)).thenReturn(false);
         when(stockBasicSourceService.fetchAll()).thenReturn(stocks);
-        when(stockBasicService.countLatestSnapshot()).thenReturn(3);
-        StockBasicCollectionFace collectionFace = createCollectionFace(1);
+        when(stockBasicService.countLatestSnapshot()).thenReturn(4000);
+        StockBasicCollectionFace collectionFace = createCollectionFace();
 
         assertThrows(IllegalStateException.class, () -> collectionFace.synchronize(tradeDate));
 
         verify(stockBasicService, never()).saveSnapshot(tradeDate, stocks);
     }
 
-    private StockBasicCollectionFace createCollectionFace(int minimumStockCount) {
+    @Test
+    void shouldRejectSnapshotBelowFixedMinimum() {
+        LocalDate tradeDate = LocalDate.of(2026, 8, 20);
+        List<StockBasicDto> stocks = createStocks(2999);
+        when(stockBasicService.hasSynchronized(tradeDate)).thenReturn(false);
+        when(stockBasicSourceService.fetchAll()).thenReturn(stocks);
+        when(stockBasicService.countLatestSnapshot()).thenReturn(0);
+        StockBasicCollectionFace collectionFace = createCollectionFace();
+
+        assertThrows(IllegalStateException.class, () -> collectionFace.synchronize(tradeDate));
+
+        verify(stockBasicService, never()).saveSnapshot(tradeDate, stocks);
+    }
+
+    private List<StockBasicDto> createStocks(int count) {
+        List<StockBasicDto> stocks = new ArrayList<>(count);
+        for (int index = 1; index <= count; index++) {
+            String stockCode = String.format("%06d", index);
+            stocks.add(new StockBasicDto(stockCode, "股票" + stockCode));
+        }
+        return stocks;
+    }
+
+    private StockBasicCollectionFace createCollectionFace() {
         return new StockBasicCollectionFace(
                 stockBasicSourceService,
-                stockBasicService,
-                minimumStockCount
+                stockBasicService
         );
     }
 }

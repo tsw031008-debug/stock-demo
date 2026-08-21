@@ -24,23 +24,40 @@ public class StockBasicServiceImpl implements StockBasicService {
 
     private final StockBasicMapper stockBasicMapper;
 
+    // 判断指定交易日的股票清单是否已经同步。
     @Override
     public boolean hasSynchronized(LocalDate tradeDate) {
         Objects.requireNonNull(tradeDate, "交易日期不能为空");
         return stockBasicMapper.countByLastSeenTradeDate(tradeDate) > 0;
     }
 
+    /**
+     * 统计最新股票清单数量。
+      * @return 股票清单数量
+     */
     @Override
     public int countLatestSnapshot() {
         return stockBasicMapper.countLatestSnapshot();
     }
 
+    /**
+     * 根据交易日期统计股票清单数量。
+      * @param tradeDate 交易日期
+      * @return 股票清单数量
+     */
     @Override
     public int countSnapshot(LocalDate tradeDate) {
         Objects.requireNonNull(tradeDate, "交易日期不能为空");
         return stockBasicMapper.countByLastSeenTradeDate(tradeDate);
     }
 
+    /**
+     * 根据交易日期、股票代码和批次大小，分批获取股票清单。
+      * @param tradeDate 交易日期
+      * @param lastStockCode 上一股票代码
+      * @param limit 批次大小
+      * @return 股票清单
+     */
     @Override
     public List<StockBasic> findSnapshotBatch(LocalDate tradeDate, String lastStockCode, int limit) {
         Objects.requireNonNull(tradeDate, "交易日期不能为空");
@@ -51,6 +68,12 @@ public class StockBasicServiceImpl implements StockBasicService {
         return stockBasicMapper.selectSnapshotAfterCode(tradeDate, lastStockCode, limit);
     }
 
+    /**
+     * 保存股票清单。
+      * @param tradeDate 交易日期
+      * @param stocks 股票清单
+      * @return 影响行数
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int saveSnapshot(LocalDate tradeDate, List<StockBasicDto> stocks) {

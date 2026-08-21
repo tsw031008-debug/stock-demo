@@ -10,7 +10,18 @@ import java.util.List;
  */
 public interface StockDailyQuoteService {
 
+    /**
+     * 根据交易日查询行情数据条数。
+     * @param tradeDate
+     * @return
+     */
     int countByTradeDate(LocalDate tradeDate);
 
+    /**
+     * 保存行情快照数据。
+     * @param quotes
+     * @return
+     */
+    // 保存行情快照数据
     int saveSnapshot(List<StockDailyQuote> quotes);
 }

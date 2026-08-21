@@ -41,6 +41,9 @@ public class StockBasicTask {
         synchronizeAfterStartup(LocalDate.now(SHANGHAI_ZONE), LocalTime.now(SHANGHAI_ZONE));
     }
 
+    /**
+     * 程序在09:10之后启动时，补执行当天尚未完成的股票清单同步。
+     */
     int synchronizeAfterStartup(LocalDate tradeDate, LocalTime currentTime) {
         if (currentTime.isBefore(SCHEDULED_TIME)) {
             return 0;
@@ -53,6 +56,9 @@ public class StockBasicTask {
         }
     }
 
+    /**
+     * 如果是交易日，则执行股票清单同步。
+     */
     int synchronizeIfTradingDay(LocalDate tradeDate, String triggerType) {
         long startTime = System.currentTimeMillis();
         log.info("股票基础信息任务开始，triggerType={}，tradeDate={}", triggerType, tradeDate);

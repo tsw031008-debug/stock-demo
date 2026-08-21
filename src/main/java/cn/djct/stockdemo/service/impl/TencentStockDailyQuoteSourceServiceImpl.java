@@ -83,6 +83,7 @@ public class TencentStockDailyQuoteSourceServiceImpl implements StockDailyQuoteS
         this.requestRateLimiter = new RequestRateLimiter(requestInterval);
     }
 
+    // 批量获取股票行情
     @Override
     public List<StockDailyQuote> fetchAll(LocalDate tradeDate, List<StockBasic> stocks) {
         if (stocks == null || stocks.isEmpty()) {
@@ -97,14 +98,18 @@ public class TencentStockDailyQuoteSourceServiceImpl implements StockDailyQuoteS
         return quotes;
     }
 
+    // 获取股票行情
     private List<StockDailyQuote> fetchBatch(LocalDate tradeDate, List<StockBasic> stocks) {
         List<String> symbols = stocks.stream()
                 .map(StockBasic::getStockCode)
                 .map(StockMarketCodeUtil::toTencentSymbol)
                 .toList();
         URI uri = URI.create(sourceUrl + String.join(",", symbols));
+        // 发送HTTP请求获取响应
         byte[] responseBody = request(uri, symbols.size());
+        // 解析HTTP响应
         String responseText = new String(responseBody, TENCENT_CHARSET);
+        // 解析股票行情字段，确保字段顺序与腾讯行情响应字段顺序一致
         Map<String, String[]> quoteFields = parseResponse(responseText);
 
         if (quoteFields.size() != stocks.size()) {
@@ -113,6 +118,7 @@ public class TencentStockDailyQuoteSourceServiceImpl implements StockDailyQuoteS
             );
         }
 
+        // 获取行情数据，确保顺序与输入股票列表一致
         LocalDateTime collectedAt = LocalDateTime.now(SHANGHAI_ZONE);
         List<StockDailyQuote> quotes = new ArrayList<>(stocks.size());
         for (int index = 0; index < stocks.size(); index++) {
@@ -127,6 +133,7 @@ public class TencentStockDailyQuoteSourceServiceImpl implements StockDailyQuoteS
         return quotes;
     }
 
+    // 发送HTTP请求获取响应
     private byte[] request(URI uri, int stockCount) {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(List.of(MediaType.TEXT_PLAIN, MediaType.ALL));
@@ -164,6 +171,7 @@ public class TencentStockDailyQuoteSourceServiceImpl implements StockDailyQuoteS
         throw new IllegalStateException("腾讯行情批次请求失败，stockCount=" + stockCount, lastException);
     }
 
+    // 解析HTTP响应
     private Map<String, String[]> parseResponse(String responseText) {
         Matcher matcher = QUOTE_PATTERN.matcher(responseText);
         Map<String, String[]> result = new LinkedHashMap<>();
@@ -180,6 +188,7 @@ public class TencentStockDailyQuoteSourceServiceImpl implements StockDailyQuoteS
         return result;
     }
 
+    // 解析股票行情字段，确保字段顺序与腾讯行情响应字段顺序一致
     private StockDailyQuote parseQuote(
             LocalDate tradeDate,
             StockBasic stock,
@@ -339,6 +348,7 @@ public class TencentStockDailyQuoteSourceServiceImpl implements StockDailyQuoteS
             this.intervalNanos = interval.toNanos();
         }
 
+        // 获取请求令牌，确保请求间隔
         private synchronized void acquire() {
             long now = System.nanoTime();
             long waitNanos = nextRequestNanos - now;

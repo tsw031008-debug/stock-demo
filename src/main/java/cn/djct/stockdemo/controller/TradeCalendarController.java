@@ -31,6 +31,11 @@ public class TradeCalendarController {
 
     private final TradeCalendarService tradeCalendarService;
 
+    /**
+     * 判断指定日期是否为交易日。
+      * @param date 指定日期
+     * @return 是否为交易日
+     */
     @Operation(summary = "判断指定日期是否为交易日")
     @GetMapping("/tradingDay")
     public Result<TradingDayRespVo> isTradingDay(
@@ -47,6 +52,11 @@ public class TradeCalendarController {
         return Result.success("操作成功", response);
     }
 
+    /**
+     * 查询指定日期之前的第N个交易日。
+     * @param date 指定日期
+     * @param offset 第N个交易日的偏移量
+     */
     @Operation(summary = "查询指定日期之前的第N个交易日")
     @GetMapping("/previousTradingDay")
     public Result<TradingDayOffsetRespVo> getPreviousTradingDay(
@@ -64,6 +74,11 @@ public class TradeCalendarController {
         return Result.success("操作成功", response);
     }
 
+    /**
+     * 查询指定日期之后的第N个交易日。
+     * @param date 指定日期
+     * @param offset 第N个交易日的偏移量
+     */
     @Operation(summary = "查询指定日期之后的第N个交易日")
     @GetMapping("/nextTradingDay")
     public Result<TradingDayOffsetRespVo> getNextTradingDay(
@@ -81,6 +96,11 @@ public class TradeCalendarController {
         return Result.success("操作成功", response);
     }
 
+    /**
+     * 初始化指定日期范围内的交易日历。
+     * @param request 交易日历初始化请求参数
+     * @return 初始化结果
+     */
     @Operation(summary = "初始化指定日期范围内的交易日历")
     @PostMapping("/initialize")
     public Result<TradeCalendarInitializeRespVo> initialize(

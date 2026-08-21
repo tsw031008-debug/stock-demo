@@ -70,6 +70,7 @@ public class SinaStockBasicSourceServiceImpl implements StockBasicSourceService 
         );
     }
 
+    // 私有构造函数，用于测试
     SinaStockBasicSourceServiceImpl(
             RestTemplate restTemplate,
             String countUrl,
@@ -87,6 +88,7 @@ public class SinaStockBasicSourceServiceImpl implements StockBasicSourceService 
         this.requestRateLimiter = new RequestRateLimiter(requestInterval);
     }
 
+    // 获取所有股票基础信息
     @Override
     public List<StockBasicDto> fetchAll() {
         int expectedCount = fetchStockCount();
@@ -114,6 +116,7 @@ public class SinaStockBasicSourceServiceImpl implements StockBasicSourceService 
         return stocks;
     }
 
+    // 获取股票总数
     private int fetchStockCount() {
         URI uri = UriComponentsBuilder.fromHttpUrl(countUrl)
                 .queryParam("node", "hs_a")
@@ -131,6 +134,7 @@ public class SinaStockBasicSourceServiceImpl implements StockBasicSourceService 
         return Integer.parseInt(countText);
     }
 
+    // 获取股票列表
     private List<StockBasicDto> fetchStockList(int pageNumber) {
         URI uri = UriComponentsBuilder.fromHttpUrl(listUrl)
                 .queryParam("page", pageNumber)
@@ -168,6 +172,7 @@ public class SinaStockBasicSourceServiceImpl implements StockBasicSourceService 
         }
     }
 
+    // 发送HTTP请求
     private String request(URI uri, String requestName) {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
@@ -193,6 +198,7 @@ public class SinaStockBasicSourceServiceImpl implements StockBasicSourceService 
         throw new IllegalStateException("新浪" + requestName + "请求失败", lastException);
     }
 
+    // 验证股票代码和名称
     private void validateStock(String stockCode, String stockName) {
         if (stockCode == null || !stockCode.matches("\\d{6}")) {
             throw new IllegalStateException("新浪返回了无效股票代码：" + stockCode);
@@ -202,6 +208,7 @@ public class SinaStockBasicSourceServiceImpl implements StockBasicSourceService 
         }
     }
 
+    // 请求速率限制器
     private static final class RequestRateLimiter {
 
         private final long intervalNanos;

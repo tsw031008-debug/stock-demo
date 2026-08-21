@@ -4,12 +4,14 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.djct.stockdemo.mapper.StockDailyQuoteMapper">
 
+    <!--根据交易日查询行情数据条数-->
     <select id="countByTradeDate" resultType="int">
         SELECT COUNT(*)
         FROM stock_daily_quote
         WHERE trade_date = #{tradeDate}
     </select>
 
+    <!--批量Upsert行情数据-->
     <insert id="upsertBatch">
         INSERT INTO stock_daily_quote (
             stock_code,

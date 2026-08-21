@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,27 +42,26 @@ class StockDailyQuoteCollectionFaceTest {
         collectionFace = new StockDailyQuoteCollectionFace(
                 stockBasicService,
                 stockDailyQuoteSourceService,
-                stockDailyQuoteService,
-                1
+                stockDailyQuoteService
         );
     }
 
     @Test
     void shouldCollectEveryQuoteBeforeSavingSnapshot() {
-        List<StockBasic> stocks = List.of(createStock("000001"), createStock("600000"));
-        List<StockDailyQuote> quotes = List.of(createQuote("000001"), createQuote("600000"));
+        List<StockBasic> stocks = createStocks(3000);
+        List<StockDailyQuote> quotes = createQuotes(stocks);
         prepareCollection(stocks, quotes, 0);
-        when(stockDailyQuoteService.saveSnapshot(quotes)).thenReturn(2);
+        when(stockDailyQuoteService.saveSnapshot(quotes)).thenReturn(3000);
 
-        assertEquals(2, collectionFace.synchronize(TRADE_DATE));
+        assertEquals(3000, collectionFace.synchronize(TRADE_DATE));
 
         verify(stockDailyQuoteService).saveSnapshot(quotes);
     }
 
     @Test
     void shouldSkipWhenTodayIsAlreadyComplete() {
-        when(stockBasicService.countSnapshot(TRADE_DATE)).thenReturn(2);
-        when(stockDailyQuoteService.countByTradeDate(TRADE_DATE)).thenReturn(2);
+        when(stockBasicService.countSnapshot(TRADE_DATE)).thenReturn(3000);
+        when(stockDailyQuoteService.countByTradeDate(TRADE_DATE)).thenReturn(3000);
 
         assertEquals(0, collectionFace.synchronize(TRADE_DATE));
 
@@ -70,12 +70,12 @@ class StockDailyQuoteCollectionFaceTest {
 
     @Test
     void shouldRepairPartialSnapshotByFullIdempotentUpsert() {
-        List<StockBasic> stocks = List.of(createStock("000001"), createStock("600000"));
-        List<StockDailyQuote> quotes = List.of(createQuote("000001"), createQuote("600000"));
+        List<StockBasic> stocks = createStocks(3000);
+        List<StockDailyQuote> quotes = createQuotes(stocks);
         prepareCollection(stocks, quotes, 1);
-        when(stockDailyQuoteService.saveSnapshot(quotes)).thenReturn(2);
+        when(stockDailyQuoteService.saveSnapshot(quotes)).thenReturn(3000);
 
-        assertEquals(2, collectionFace.synchronize(TRADE_DATE));
+        assertEquals(3000, collectionFace.synchronize(TRADE_DATE));
     }
 
     @Test
@@ -94,9 +94,31 @@ class StockDailyQuoteCollectionFaceTest {
     ) {
         when(stockBasicService.countSnapshot(TRADE_DATE)).thenReturn(stocks.size());
         when(stockDailyQuoteService.countByTradeDate(TRADE_DATE)).thenReturn(savedCount);
-        when(stockBasicService.findSnapshotBatch(TRADE_DATE, "", 1000)).thenReturn(stocks);
-        when(stockBasicService.findSnapshotBatch(TRADE_DATE, "600000", 1000)).thenReturn(List.of());
-        when(stockDailyQuoteSourceService.fetchAll(TRADE_DATE, stocks)).thenReturn(quotes);
+        String lastStockCode = "";
+        for (int start = 0; start < stocks.size(); start += 1000) {
+            int end = Math.min(start + 1000, stocks.size());
+            List<StockBasic> stockBatch = stocks.subList(start, end);
+            List<StockDailyQuote> quoteBatch = quotes.subList(start, end);
+            when(stockBasicService.findSnapshotBatch(TRADE_DATE, lastStockCode, 1000))
+                    .thenReturn(stockBatch);
+            when(stockDailyQuoteSourceService.fetchAll(TRADE_DATE, stockBatch)).thenReturn(quoteBatch);
+            lastStockCode = stockBatch.get(stockBatch.size() - 1).getStockCode();
+        }
+        when(stockBasicService.findSnapshotBatch(TRADE_DATE, lastStockCode, 1000)).thenReturn(List.of());
+    }
+
+    private List<StockBasic> createStocks(int count) {
+        List<StockBasic> stocks = new ArrayList<>(count);
+        for (int index = 1; index <= count; index++) {
+            stocks.add(createStock(String.format("%06d", index)));
+        }
+        return stocks;
+    }
+
+    private List<StockDailyQuote> createQuotes(List<StockBasic> stocks) {
+        return stocks.stream()
+                .map(stock -> createQuote(stock.getStockCode()))
+                .toList();
     }
 
     private StockBasic createStock(String stockCode) {

@@ -26,11 +26,18 @@ public class StockDailyQuoteController {
 
     private final StockDailyQuoteSyncService stockDailyQuoteSyncService;
 
+    /**
+     * 手动同步当天股票日行情。
+     * @return 操作结果
+     */
     @Operation(summary = "手动同步当天股票日行情")
     @PostMapping("/synchronize")
     public Result<StockDailyQuoteSynchronizeRespVo> synchronize() {
+        //获得当前交易日
         LocalDate tradeDate = LocalDate.now(SHANGHAI_ZONE);
+        //同步数据
         int savedCount = stockDailyQuoteSyncService.synchronize(tradeDate);
+        //构建响应
         StockDailyQuoteSynchronizeRespVo response = StockDailyQuoteSynchronizeRespVo.builder()
                 .tradeDate(tradeDate)
                 .savedCount(savedCount)

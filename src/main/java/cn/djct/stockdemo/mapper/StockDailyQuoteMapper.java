@@ -13,7 +13,17 @@ import java.util.List;
 @Mapper
 public interface StockDailyQuoteMapper {
 
+    /**
+     * 根据交易日查询行情数据条数。
+     * @param tradeDate 交易日
+     * @return  行情数据条数
+     */
     int countByTradeDate(@Param("tradeDate") LocalDate tradeDate);
 
+    /**
+     * 批量插入或更新行情数据。
+     * @param quotes 行情数据列表
+     * @return  插入或更新的行数
+     */
     int upsertBatch(@Param("list") List<StockDailyQuote> quotes);
 }

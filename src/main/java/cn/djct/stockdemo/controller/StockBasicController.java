@@ -26,10 +26,15 @@ public class StockBasicController {
 
     private final StockBasicSyncService stockBasicSyncService;
 
+    /**
+     * 手动同步当天股票基础信息。
+     * @return 操作结果
+     */
     @Operation(summary = "手动同步当天股票基础信息")
     @PostMapping("/synchronize")
     public Result<StockBasicSynchronizeRespVo> synchronize() {
         LocalDate tradeDate = LocalDate.now(SHANGHAI_ZONE);
+        //同步数据
         int savedCount = stockBasicSyncService.synchronize(tradeDate);
         StockBasicSynchronizeRespVo response = StockBasicSynchronizeRespVo.builder()
                 .tradeDate(tradeDate)

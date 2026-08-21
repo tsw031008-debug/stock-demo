@@ -91,7 +91,6 @@ stock:
     sync:
       enabled: ${STOCK_BASIC_SYNC_ENABLED:true}
       cron: ${STOCK_BASIC_SYNC_CRON:0 10 9 * * *}
-      minimum-stock-count: ${STOCK_BASIC_MINIMUM_STOCK_COUNT:3000}
   daily-quote:
     source:
       url: ${STOCK_DAILY_QUOTE_SOURCE_URL:http://qt.gtimg.cn/q=}

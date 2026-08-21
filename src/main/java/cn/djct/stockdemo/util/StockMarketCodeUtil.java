@@ -8,6 +8,7 @@ public final class StockMarketCodeUtil {
     private StockMarketCodeUtil() {
     }
 
+    // 腾讯股票代码转换
     public static String toTencentSymbol(String stockCode) {
         if (stockCode == null || !stockCode.matches("\\d{6}")) {
             throw new IllegalArgumentException("股票代码格式错误：" + stockCode);

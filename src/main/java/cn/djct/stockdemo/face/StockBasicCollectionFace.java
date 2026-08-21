@@ -4,7 +4,6 @@ import cn.djct.stockdemo.pojo.dto.StockBasicDto;
 import cn.djct.stockdemo.service.StockBasicService;
 import cn.djct.stockdemo.service.StockBasicSourceService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -21,26 +20,28 @@ import java.util.concurrent.locks.ReentrantLock;
 @Component
 public class StockBasicCollectionFace {
 
+    private static final int MINIMUM_STOCK_COUNT = 3000;
     private static final int MINIMUM_RETAIN_PERCENT = 95;
 
     private final StockBasicSourceService stockBasicSourceService;
 
     private final StockBasicService stockBasicService;
 
-    private final int minimumStockCount;
-
     private final ReentrantLock synchronizationLock = new ReentrantLock();
 
     public StockBasicCollectionFace(
             StockBasicSourceService stockBasicSourceService,
-            StockBasicService stockBasicService,
-            @Value("${stock.basic.sync.minimum-stock-count:3000}") int minimumStockCount
+            StockBasicService stockBasicService
     ) {
         this.stockBasicSourceService = stockBasicSourceService;
         this.stockBasicService = stockBasicService;
-        this.minimumStockCount = minimumStockCount;
     }
 
+    /**
+     * 同步股票基础信息。
+     * @param tradeDate 交易日期
+     * @return  保存的股票数量
+     */
     public int synchronize(LocalDate tradeDate) {
         Objects.requireNonNull(tradeDate, "交易日期不能为空");
         if (!synchronizationLock.tryLock()) {
@@ -64,10 +65,15 @@ public class StockBasicCollectionFace {
         }
     }
 
+    /**
+     * 验证股票清单。
+     * @param stocks 股票清单
+     * @param latestSnapshotCount 最新快照数量
+     */
     private void validateSnapshot(List<StockBasicDto> stocks, int latestSnapshotCount) {
-        if (stocks.size() < minimumStockCount) {
+        if (stocks.size() < MINIMUM_STOCK_COUNT) {
             throw new IllegalStateException(
-                    "股票清单数量过少，minimum=" + minimumStockCount + "，actual=" + stocks.size()
+                    "股票清单数量过少，minimum=" + MINIMUM_STOCK_COUNT + "，actual=" + stocks.size()
             );
         }
 
