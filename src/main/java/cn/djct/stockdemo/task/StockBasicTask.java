@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +38,7 @@ public class StockBasicTask {
      * 程序在09:10之后启动时，补执行当天尚未完成的股票清单同步。
      */
     @EventListener(ApplicationReadyEvent.class)
+    @Order(10)
     public void synchronizeAfterStartup() {
         synchronizeAfterStartup(LocalDate.now(SHANGHAI_ZONE), LocalTime.now(SHANGHAI_ZONE));
     }

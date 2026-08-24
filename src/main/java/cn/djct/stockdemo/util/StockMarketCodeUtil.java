@@ -8,6 +8,16 @@ public final class StockMarketCodeUtil {
     private StockMarketCodeUtil() {
     }
 
+    public static boolean isShanghaiOrShenzhenAStock(String stockCode) {
+        if (stockCode == null || !stockCode.matches("\\d{6}")) {
+            return false;
+        }
+        return switch (stockCode.charAt(0)) {
+            case '0', '3', '6' -> true;
+            default -> false;
+        };
+    }
+
     // 腾讯股票代码转换
     public static String toTencentSymbol(String stockCode) {
         if (stockCode == null || !stockCode.matches("\\d{6}")) {

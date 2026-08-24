@@ -3,9 +3,20 @@ package cn.djct.stockdemo.util;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StockMarketCodeUtilTest {
+
+    @Test
+    void shouldIdentifyShanghaiAndShenzhenAStocks() {
+        assertTrue(StockMarketCodeUtil.isShanghaiOrShenzhenAStock("600000"));
+        assertTrue(StockMarketCodeUtil.isShanghaiOrShenzhenAStock("000001"));
+        assertTrue(StockMarketCodeUtil.isShanghaiOrShenzhenAStock("300001"));
+        assertFalse(StockMarketCodeUtil.isShanghaiOrShenzhenAStock("920001"));
+        assertFalse(StockMarketCodeUtil.isShanghaiOrShenzhenAStock(null));
+    }
 
     @Test
     void shouldConvertStockCodeToTencentSymbol() {

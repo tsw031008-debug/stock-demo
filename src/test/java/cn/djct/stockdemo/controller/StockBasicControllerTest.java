@@ -3,6 +3,7 @@ package cn.djct.stockdemo.controller;
 import cn.djct.stockdemo.mapper.NationalHolidayMapper;
 import cn.djct.stockdemo.mapper.StockBasicMapper;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
+import cn.djct.stockdemo.mapper.StockFundFlowMapper;
 import cn.djct.stockdemo.mapper.TradeCalendarMapper;
 import cn.djct.stockdemo.service.StockBasicSyncService;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,9 @@ class StockBasicControllerTest {
 
     @MockBean
     private StockDailyQuoteMapper stockDailyQuoteMapper;
+
+    @MockBean
+    private StockFundFlowMapper stockFundFlowMapper;
 
     @Test
     void shouldSynchronizeCurrentStockBasicSnapshot() throws Exception {

@@ -29,3 +29,6 @@ stock:
   daily-quote:
     sync:
       enabled: false
+  fund-flow:
+    sync:
+      enabled: false
