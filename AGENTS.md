@@ -52,7 +52,7 @@
 - 信号和选股：涨速、涨停或开板提醒、指数背离及各类选股策略。
 - 统计分析：市场水位、周月对比、股票家数和指数差异分布。
 
-业务职责通过类名、Service 和 Face 划分，物理包结构统一按技术分层，不建立 `calendar`、`market` 等一级领域包。
+顶层物理包保持技术分层，不建立 `calendar`、`market` 等一级领域包。`controller` 和 `service` 内部按实际业务模块建立子包，当前模块名统一为 `tradecalendar`、`stockbasic`、`stockdailyquote`、`stockfundflow`、`marketlevel`；Service 实现放在对应模块的 `impl` 子包。
 
 # 目录结构
 
@@ -61,7 +61,12 @@ src/main/java/cn/djct/stockdemo/
 ├─ common/              # Service 与 Task 可复用的公共内容
 ├─ config/              # 配置类
 ├─ constant/            # 常量和枚举
-├─ controller/          # Web 接口
+├─ controller/          # Web 接口，按业务模块分子包
+│  ├─ marketlevel/
+│  ├─ stockbasic/
+│  ├─ stockdailyquote/
+│  ├─ stockfundflow/
+│  └─ tradecalendar/
 ├─ face/                # Task 相关的复杂操作和计算封装
 ├─ filter/              # 过滤器
 ├─ interceptor/         # 拦截器
@@ -70,8 +75,17 @@ src/main/java/cn/djct/stockdemo/
 │  ├─ dto/              # 中间层对象，名称以 Dto 结尾
 │  ├─ entity/           # 数据源和数据库实体
 │  └─ vo/               # Web 请求或响应对象，名称以 Vo 或 RespVo 结尾
-├─ service/
-│  └─ impl/             # Service 实现
+├─ service/             # Service接口，按业务模块分子包
+│  ├─ marketlevel/
+│  │  └─ impl/
+│  ├─ stockbasic/
+│  │  └─ impl/
+│  ├─ stockdailyquote/
+│  │  └─ impl/
+│  ├─ stockfundflow/
+│  │  └─ impl/
+│  └─ tradecalendar/
+│     └─ impl/
 ├─ task/                # 定时任务触发和编排
 └─ util/                # 无状态工具类
 
@@ -107,6 +121,8 @@ src/test/java/cn/djct/stockdemo/
 # 数据访问规范
 
 - 所有 SQL 必须写在 `src/main/resources/mapper/` 下的 MyBatis XML 文件中，包括简单 CRUD 和复杂聚合查询。
+- 查询 SQL 只负责筛选并返回业务计算所需的数据，禁止在 SQL 中使用 `SUM`、`AVG`、`ROUND`、`CASE`、`GROUP BY` 等实现业务汇总、指标公式或业务分类；相关计算统一放在 Service 或可独立测试的计算组件中。
+- `COUNT`、`MAX`、`MIN` 仅可用于存在性判断、分页总数、数据完整性统计、最新或最早记录定位等数据访问语义，不得用于实现业务指标计算。
 - 禁止使用 `@Select`、`@Insert`、`@Update`、`@Delete`、`@SelectProvider` 等注解方式定义 SQL。
 - Mapper 接口的方法签名、参数名、返回类型必须与对应 XML 的 namespace、statement id 和 result mapping 保持一致。
 - 对外列表查询必须分页，并设置合理的最大分页大小。

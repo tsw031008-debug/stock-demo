@@ -109,3 +109,9 @@ stock:
     sync:
       enabled: ${STOCK_FUND_FLOW_SYNC_ENABLED:true}
       cron: ${STOCK_FUND_FLOW_SYNC_CRON:0 5 15 * * *}
+  market-level:
+    source:
+      url: ${MARKET_LEVEL_SOURCE_URL:http://qt.gtimg.cn/q=s_sh000001,s_sz399106}
+      connect-timeout: ${MARKET_LEVEL_SOURCE_CONNECT_TIMEOUT:5s}
+      read-timeout: ${MARKET_LEVEL_SOURCE_READ_TIMEOUT:10s}
+      request-interval: ${MARKET_LEVEL_SOURCE_REQUEST_INTERVAL:1s}

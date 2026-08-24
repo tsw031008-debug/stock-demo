@@ -2,9 +2,9 @@ package cn.djct.stockdemo.face;
 
 import cn.djct.stockdemo.pojo.entity.StockBasic;
 import cn.djct.stockdemo.pojo.entity.StockFundFlow;
-import cn.djct.stockdemo.service.StockBasicService;
-import cn.djct.stockdemo.service.StockFundFlowService;
-import cn.djct.stockdemo.service.StockFundFlowSourceService;
+import cn.djct.stockdemo.service.stockbasic.StockBasicService;
+import cn.djct.stockdemo.service.stockfundflow.StockFundFlowService;
+import cn.djct.stockdemo.service.stockfundflow.StockFundFlowSourceService;
 import cn.djct.stockdemo.util.StockMarketCodeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

@@ -11,6 +11,25 @@
         WHERE trade_date = #{tradeDate}
     </select>
 
+    <!--查询指定交易日的沪深A股成交额原始记录-->
+    <select id="selectMarketTurnoverRecords"
+            resultType="cn.djct.stockdemo.pojo.dto.MarketTurnoverRecordDto">
+        SELECT
+            trade_date,
+            turnover_amount_yuan
+        FROM stock_daily_quote
+        WHERE trade_date IN
+            <foreach collection="tradeDates" item="tradeDate" open="(" separator="," close=")">
+                #{tradeDate}
+            </foreach>
+            AND (
+                stock_code LIKE '0%'
+                OR stock_code LIKE '3%'
+                OR stock_code LIKE '6%'
+            )
+        ORDER BY trade_date DESC
+    </select>
+
     <!--批量Upsert行情数据-->
     <insert id="upsertBatch">
         INSERT INTO stock_daily_quote (

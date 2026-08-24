@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.task;
 
-import cn.djct.stockdemo.service.StockDailyQuoteSyncService;
+import cn.djct.stockdemo.service.stockdailyquote.StockDailyQuoteSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

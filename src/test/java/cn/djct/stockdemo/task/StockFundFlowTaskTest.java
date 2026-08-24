@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.task;
 
-import cn.djct.stockdemo.service.StockFundFlowSyncService;
+import cn.djct.stockdemo.service.stockfundflow.StockFundFlowSyncService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

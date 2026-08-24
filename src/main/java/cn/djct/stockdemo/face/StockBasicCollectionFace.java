@@ -1,8 +1,8 @@
 package cn.djct.stockdemo.face;
 
 import cn.djct.stockdemo.pojo.dto.StockBasicDto;
-import cn.djct.stockdemo.service.StockBasicService;
-import cn.djct.stockdemo.service.StockBasicSourceService;
+import cn.djct.stockdemo.service.stockbasic.StockBasicService;
+import cn.djct.stockdemo.service.stockbasic.StockBasicSourceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

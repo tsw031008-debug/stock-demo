@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.task;
 
-import cn.djct.stockdemo.service.StockBasicSyncService;
+import cn.djct.stockdemo.service.stockbasic.StockBasicSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

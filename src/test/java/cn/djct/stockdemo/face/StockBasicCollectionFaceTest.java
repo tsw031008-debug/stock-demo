@@ -1,8 +1,8 @@
 package cn.djct.stockdemo.face;
 
 import cn.djct.stockdemo.pojo.dto.StockBasicDto;
-import cn.djct.stockdemo.service.StockBasicService;
-import cn.djct.stockdemo.service.StockBasicSourceService;
+import cn.djct.stockdemo.service.stockbasic.StockBasicService;
+import cn.djct.stockdemo.service.stockbasic.StockBasicSourceService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
