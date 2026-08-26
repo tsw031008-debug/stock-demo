@@ -63,7 +63,7 @@ public class EastMoneyStockFundFlowSourceServiceImpl implements StockFundFlowSou
             @Value("${stock.fund-flow.source.url}") String sourceUrl,
             @Value("${stock.fund-flow.source.connect-timeout:5s}") Duration connectTimeout,
             @Value("${stock.fund-flow.source.read-timeout:15s}") Duration readTimeout,
-            @Value("${stock.fund-flow.source.request-interval:1s}") Duration requestInterval
+            @Value("${stock.fund-flow.source.request-interval:2s}") Duration requestInterval
     ) {
         this(
                 restTemplateBuilder

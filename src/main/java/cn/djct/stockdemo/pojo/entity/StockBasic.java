@@ -17,15 +17,21 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class StockBasic {
 
+    //
     private Long id;
 
+    // 股票代码
     private String stockCode;
 
+    // 股票名称
     private String stockName;
 
+    // 最后一次交易日期
     private LocalDate lastSeenTradeDate;
 
+    // 创建时间
     private LocalDateTime createdAt;
 
+    // 更新时间
     private LocalDateTime updatedAt;
 }

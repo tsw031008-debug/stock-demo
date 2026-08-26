@@ -1,6 +1,7 @@
 package cn.djct.stockdemo.mapper;
 
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
+import cn.djct.stockdemo.pojo.dto.StockClosePriceDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -45,6 +46,25 @@ class StockDailyQuoteMapperIntegrationTest {
         );
         assertEquals(2, stockDailyQuoteMapper.countByTradeDate(tradeDate));
         assertEquals(0, new BigDecimal("10.50").compareTo(closePrice));
+
+        LocalDate firstDate = LocalDate.of(2026, 8, 18);
+        LocalDate secondDate = LocalDate.of(2026, 8, 19);
+        LocalDate otherDate = LocalDate.of(2026, 8, 17);
+        stockDailyQuoteMapper.upsertBatch(List.of(
+                createQuote("600000", "浦发银行", firstDate, "10.00"),
+                createQuote("600000", "浦发银行", secondDate, "10.50"),
+                createQuote("000001", "平安银行", otherDate, "12.00")
+        ));
+
+        List<StockClosePriceDto> result = stockDailyQuoteMapper.selectClosePricesByTradeDates(
+                List.of(firstDate, secondDate)
+        );
+
+        assertEquals(2, result.size());
+        assertEquals(secondDate, result.get(0).getTradeDate());
+        assertEquals("600000", result.get(0).getStockCode());
+        assertEquals(0, new BigDecimal("10.50").compareTo(result.get(0).getClosePrice()));
+        assertEquals(firstDate, result.get(1).getTradeDate());
     }
 
     private StockDailyQuote createQuote(

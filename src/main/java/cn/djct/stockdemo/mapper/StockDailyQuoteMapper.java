@@ -1,6 +1,7 @@
 package cn.djct.stockdemo.mapper;
 
 import cn.djct.stockdemo.pojo.dto.MarketTurnoverRecordDto;
+import cn.djct.stockdemo.pojo.dto.StockClosePriceDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -28,6 +29,16 @@ public interface StockDailyQuoteMapper {
      * @return 成交额原始记录
      */
     List<MarketTurnoverRecordDto> selectMarketTurnoverRecords(
+            @Param("tradeDates") List<LocalDate> tradeDates
+    );
+
+    /**
+     * 查询指定交易日的股票历史收盘价原始数据。
+     *
+     * @param tradeDates 交易日列表
+     * @return 股票历史收盘价
+     */
+    List<StockClosePriceDto> selectClosePricesByTradeDates(
             @Param("tradeDates") List<LocalDate> tradeDates
     );
 

@@ -30,6 +30,21 @@
         ORDER BY trade_date DESC
     </select>
 
+    <!--查询指定交易日的股票历史收盘价原始数据-->
+    <select id="selectClosePricesByTradeDates"
+            resultType="cn.djct.stockdemo.pojo.dto.StockClosePriceDto">
+        SELECT
+            stock_code,
+            trade_date,
+            close_price
+        FROM stock_daily_quote
+        WHERE trade_date IN
+            <foreach collection="tradeDates" item="tradeDate" open="(" separator="," close=")">
+                #{tradeDate}
+            </foreach>
+        ORDER BY trade_date DESC, stock_code ASC
+    </select>
+
     <!--批量Upsert行情数据-->
     <insert id="upsertBatch">
         INSERT INTO stock_daily_quote (

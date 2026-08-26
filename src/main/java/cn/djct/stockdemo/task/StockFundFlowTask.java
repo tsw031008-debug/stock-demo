@@ -24,11 +24,11 @@ import java.time.ZoneId;
 public class StockFundFlowTask {
 
     private static final ZoneId SHANGHAI_ZONE = ZoneId.of("Asia/Shanghai");
-    private static final LocalTime SCHEDULED_TIME = LocalTime.of(15, 5);
+    private static final LocalTime SCHEDULED_TIME = LocalTime.of(15, 20);
 
     private final StockFundFlowSyncService stockFundFlowSyncService;
 
-    @Scheduled(cron = "${stock.fund-flow.sync.cron:0 5 15 * * *}", zone = "Asia/Shanghai")
+    @Scheduled(cron = "${stock.fund-flow.sync.cron:0 20 15 * * *}", zone = "Asia/Shanghai")
     public void synchronizeOnSchedule() {
         synchronize(LocalDate.now(SHANGHAI_ZONE), "SCHEDULED");
     }

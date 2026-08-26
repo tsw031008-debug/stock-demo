@@ -102,13 +102,13 @@ stock:
       cron: ${STOCK_DAILY_QUOTE_SYNC_CRON:0 2 15 * * *}
   fund-flow:
     source:
-      url: ${STOCK_FUND_FLOW_SOURCE_URL:https://push2.eastmoney.com/api/qt/clist/get}
+      url: ${STOCK_FUND_FLOW_SOURCE_URL:https://push2delay.eastmoney.com/api/qt/clist/get}
       connect-timeout: ${STOCK_FUND_FLOW_SOURCE_CONNECT_TIMEOUT:5s}
       read-timeout: ${STOCK_FUND_FLOW_SOURCE_READ_TIMEOUT:15s}
-      request-interval: ${STOCK_FUND_FLOW_SOURCE_REQUEST_INTERVAL:1s}
+      request-interval: ${STOCK_FUND_FLOW_SOURCE_REQUEST_INTERVAL:2s}
     sync:
       enabled: ${STOCK_FUND_FLOW_SYNC_ENABLED:true}
-      cron: ${STOCK_FUND_FLOW_SYNC_CRON:0 5 15 * * *}
+      cron: ${STOCK_FUND_FLOW_SYNC_CRON:0 20 15 * * *}
   market-level:
     source:
       url: ${MARKET_LEVEL_SOURCE_URL:http://qt.gtimg.cn/q=s_sh000001,s_sz399106}

@@ -26,20 +26,20 @@ class StockFundFlowTaskTest {
     private StockFundFlowTask stockFundFlowTask;
 
     @Test
-    void shouldSkipStartupCatchUpBeforeFifteenFive() {
+    void shouldSkipStartupCatchUpBeforeFifteenTwenty() {
         LocalDate tradeDate = LocalDate.of(2026, 8, 21);
 
-        assertEquals(0, stockFundFlowTask.synchronizeAfterStartup(tradeDate, LocalTime.of(15, 4)));
+        assertEquals(0, stockFundFlowTask.synchronizeAfterStartup(tradeDate, LocalTime.of(15, 19)));
 
         verify(stockFundFlowSyncService, never()).synchronize(tradeDate);
     }
 
     @Test
-    void shouldCatchUpAfterFifteenFive() {
+    void shouldCatchUpAtFifteenTwenty() {
         LocalDate tradeDate = LocalDate.of(2026, 8, 21);
         when(stockFundFlowSyncService.synchronize(tradeDate)).thenReturn(5200);
 
-        assertEquals(5200, stockFundFlowTask.synchronizeAfterStartup(tradeDate, LocalTime.of(15, 6)));
+        assertEquals(5200, stockFundFlowTask.synchronizeAfterStartup(tradeDate, LocalTime.of(15, 20)));
     }
 
     @Test
@@ -48,6 +48,6 @@ class StockFundFlowTaskTest {
         doThrow(new IllegalStateException("数据源不可用"))
                 .when(stockFundFlowSyncService).synchronize(tradeDate);
 
-        assertEquals(0, stockFundFlowTask.synchronizeAfterStartup(tradeDate, LocalTime.of(15, 6)));
+        assertEquals(0, stockFundFlowTask.synchronizeAfterStartup(tradeDate, LocalTime.of(15, 20)));
     }
 }

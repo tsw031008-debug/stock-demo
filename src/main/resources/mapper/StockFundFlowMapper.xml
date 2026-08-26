@@ -10,6 +10,27 @@
         WHERE trade_date = #{tradeDate}
     </select>
 
+    <!--分页查询指定交易日的资金流向原始数据-->
+    <select id="selectPageByTradeDate"
+            resultType="cn.djct.stockdemo.pojo.dto.StockFundFlowDto">
+        SELECT
+            trade_date,
+            stock_code,
+            stock_name,
+            latest_price,
+            change_percent,
+            main_net_inflow_yuan,
+            main_net_inflow_ratio,
+            super_large_net_inflow_yuan,
+            super_large_net_inflow_ratio,
+            large_net_inflow_yuan,
+            large_net_inflow_ratio
+        FROM stock_fund_flow
+        WHERE trade_date = #{tradeDate}
+        ORDER BY main_net_inflow_yuan DESC, stock_code ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
     <insert id="upsertBatch">
         INSERT INTO stock_fund_flow (
             stock_code,

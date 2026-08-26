@@ -37,5 +37,7 @@ build/
 .env
 .venv/
 .cache/
+__pycache__/
+*.py[cod]
 logs/
 src/main/resources/application-local.yml
