@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.djct.stockdemo.mapper.StockPlateMapper">
+
+    <resultMap id="StockPlateResultMap" type="cn.djct.stockdemo.pojo.entity.StockPlate">
+        <id property="id" column="id"/>
+        <result property="plateName" column="plate_name"/>
+        <result property="dataSource" column="data_source"/>
+        <result property="lastSeenTradeDate" column="last_seen_trade_date"/>
+        <result property="active" column="active"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!--批量插入或更新板块快照。-->
+    <insert id="upsertPlateBatch">
+        INSERT INTO stock_plate (
+            plate_name,
+            data_source,
+            last_seen_trade_date,
+            active
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.plateName},
+            #{item.dataSource},
+            #{item.lastSeenTradeDate},
+            1
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            last_seen_trade_date = VALUES(last_seen_trade_date),
+            active = 1,
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <!--查询指定来源的全部板块。-->
+    <select id="selectByDataSource" resultMap="StockPlateResultMap">
+        SELECT
+            id,
+            plate_name,
+            data_source,
+            last_seen_trade_date,
+            active,
+            created_at,
+            updated_at
+        FROM stock_plate
+        WHERE data_source = #{dataSource}
+        ORDER BY plate_name
+    </select>
+
+    <!--将完整快照中未出现的旧板块标记为失效。-->
+    <update id="deactivatePlatesNotSeen">
+        UPDATE stock_plate
+        SET active = 0,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE data_source = #{dataSource}
+            AND last_seen_trade_date &lt; #{tradeDate}
+            AND active = 1
+    </update>
+
+    <!--批量插入或更新板块成分关系。-->
+    <insert id="upsertMemberBatch">
+        INSERT INTO stock_plate_member (
+            plate_id,
+            stock_code,
+            last_seen_trade_date,
+            active
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.plateId},
+            #{item.stockCode},
+            #{item.lastSeenTradeDate},
+            1
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            last_seen_trade_date = VALUES(last_seen_trade_date),
+            active = 1,
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <!--将完整快照中未出现的旧成分关系标记为失效。-->
+    <update id="deactivateMembersNotSeen">
+        UPDATE stock_plate_member member
+        INNER JOIN stock_plate plate ON plate.id = member.plate_id
+        SET member.active = 0,
+            member.updated_at = CURRENT_TIMESTAMP
+        WHERE plate.data_source = #{dataSource}
+            AND member.last_seen_trade_date &lt; #{tradeDate}
+            AND member.active = 1
+    </update>
+
+    <!--统计指定交易日同步的有效板块数量。-->
+    <select id="countActivePlates" resultType="int">
+        SELECT COUNT(*)
+        FROM stock_plate
+        WHERE data_source = #{dataSource}
+            AND last_seen_trade_date = #{tradeDate}
+            AND active = 1
+    </select>
+
+    <!--统计指定交易日同步的有效成分关系数量。-->
+    <select id="countActiveMembers" resultType="int">
+        SELECT COUNT(*)
+        FROM stock_plate_member member
+        INNER JOIN stock_plate plate ON plate.id = member.plate_id
+        WHERE plate.data_source = #{dataSource}
+            AND member.last_seen_trade_date = #{tradeDate}
+            AND member.active = 1
+            AND plate.active = 1
+    </select>
+
+    <!--查询当前有效板块和成分股原始数据。-->
+    <select id="selectActiveMembers"
+            resultType="cn.djct.stockdemo.pojo.dto.StockPlateMemberDto">
+        SELECT
+            plate.id AS plate_id,
+            plate.plate_name,
+            member.stock_code
+        FROM stock_plate plate
+        INNER JOIN stock_plate_member member ON member.plate_id = plate.id
+        WHERE plate.data_source = #{dataSource}
+            AND plate.active = 1
+            AND member.active = 1
+        ORDER BY plate.plate_name, member.stock_code
+    </select>
+</mapper>

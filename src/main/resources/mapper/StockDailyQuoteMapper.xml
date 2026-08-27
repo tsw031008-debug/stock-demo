@@ -45,6 +45,22 @@
         ORDER BY trade_date DESC, stock_code ASC
     </select>
 
+    <!--查询指定交易日用于板块计算的股票行情原始数据。-->
+    <select id="selectForPlateCalculation"
+            resultType="cn.djct.stockdemo.pojo.entity.StockDailyQuote">
+        SELECT
+            stock_code,
+            stock_name,
+            trade_date,
+            close_price,
+            turnover_amount_yuan,
+            ask1_volume_hand,
+            change_percent
+        FROM stock_daily_quote
+        WHERE trade_date = #{tradeDate}
+        ORDER BY stock_code
+    </select>
+
     <!--批量Upsert行情数据-->
     <insert id="upsertBatch">
         INSERT INTO stock_daily_quote (

@@ -58,4 +58,18 @@ public interface TradeCalendarMapper {
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
+
+    /**
+     * 查询指定范围内的交易日。
+     *
+     * @param marketCode 市场代码
+     * @param startDate  开始日期
+     * @param endDate    结束日期
+     * @return 交易日列表
+     */
+    List<LocalDate> selectTradingDates(
+            @Param("marketCode") String marketCode,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
 }

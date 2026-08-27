@@ -12,7 +12,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class StockBasicDto {
 
+    // 股票代码
     private String stockCode;
 
+    // 股票名称
     private String stockName;
 }

@@ -115,3 +115,12 @@ stock:
       connect-timeout: ${MARKET_LEVEL_SOURCE_CONNECT_TIMEOUT:5s}
       read-timeout: ${MARKET_LEVEL_SOURCE_READ_TIMEOUT:10s}
       request-interval: ${MARKET_LEVEL_SOURCE_REQUEST_INTERVAL:1s}
+  plate:
+    source:
+      url: ${STOCK_PLATE_SOURCE_URL:http://test46.szdjct.com/exponent/manage/plate/getThsgn3LevelPlate}
+      connect-timeout: ${STOCK_PLATE_SOURCE_CONNECT_TIMEOUT:5s}
+      read-timeout: ${STOCK_PLATE_SOURCE_READ_TIMEOUT:20s}
+    sync:
+      enabled: ${STOCK_PLATE_SYNC_ENABLED:true}
+      member-cron: ${STOCK_PLATE_MEMBER_SYNC_CRON:0 15 9 * * *}
+      daily-quote-cron: ${STOCK_PLATE_DAILY_QUOTE_SYNC_CRON:0 3 15 * * *}

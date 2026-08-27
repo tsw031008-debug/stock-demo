@@ -99,4 +99,14 @@
         WHERE market_code = #{marketCode}
             AND trade_date BETWEEN #{startDate} AND #{endDate}
     </select>
+
+    <!--查询指定范围内的交易日。-->
+    <select id="selectTradingDates" resultType="java.time.LocalDate">
+        SELECT trade_date
+        FROM trade_calendar
+        WHERE market_code = #{marketCode}
+            AND trade_date BETWEEN #{startDate} AND #{endDate}
+            AND is_trading_day = 1
+        ORDER BY trade_date
+    </select>
 </mapper>

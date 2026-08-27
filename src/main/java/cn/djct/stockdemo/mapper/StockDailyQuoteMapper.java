@@ -43,6 +43,14 @@ public interface StockDailyQuoteMapper {
     );
 
     /**
+     * 查询指定交易日用于板块计算的股票行情原始数据。
+     *
+     * @param tradeDate 交易日
+     * @return 股票行情原始数据
+     */
+    List<StockDailyQuote> selectForPlateCalculation(@Param("tradeDate") LocalDate tradeDate);
+
+    /**
      * 批量插入或更新行情数据。
      * @param quotes 行情数据列表
      * @return  插入或更新的行数

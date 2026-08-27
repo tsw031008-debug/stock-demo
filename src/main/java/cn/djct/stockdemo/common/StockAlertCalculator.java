@@ -77,7 +77,7 @@ public class StockAlertCalculator {
         Objects.requireNonNull(currentQuotes, "当前实时行情不能为空");
         // 按开板条件筛选，转换成交额单位并按业务规则排序
         return currentQuotes.stream()
-                .filter(this::matchesOpenBoardCondition)
+                .filter(this::isLimitUpCandidate)
                 .map(quote -> StockOpenBoardAlertDto.builder()
                         .stockCode(quote.getStockCode())
                         .stockName(quote.getStockName())
@@ -193,7 +193,7 @@ public class StockAlertCalculator {
     /**
      * 判断行情是否符合卖一量为0、有效成交且非ST的文档条件。
      */
-    private boolean matchesOpenBoardCondition(StockDailyQuote quote) {
+    public boolean isLimitUpCandidate(StockDailyQuote quote) {
         // 必需字段为空时不能把空值当成0命中筛选条件
         if (quote == null || quote.getStockCode() == null || quote.getStockName() == null
                 || quote.getChangePercent() == null || quote.getAsk1VolumeHand() == null) {

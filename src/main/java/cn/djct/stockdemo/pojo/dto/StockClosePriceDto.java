@@ -17,7 +17,10 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class StockClosePriceDto {
 
+    // 股票代码
     private String stockCode;
+    // 交易日期
     private LocalDate tradeDate;
+    // 收盘价
     private BigDecimal closePrice;
 }

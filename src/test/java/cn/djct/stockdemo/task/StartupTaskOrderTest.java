@@ -11,6 +11,7 @@ class StartupTaskOrderTest {
     void shouldRunStartupCatchUpInDependencyOrder() throws NoSuchMethodException {
         assertEquals(10, orderOf(StockBasicTask.class));
         assertEquals(20, orderOf(StockDailyQuoteTask.class));
+        assertEquals(25, orderOf(StockPlateTask.class));
         assertEquals(30, orderOf(StockFundFlowTask.class));
     }
 
