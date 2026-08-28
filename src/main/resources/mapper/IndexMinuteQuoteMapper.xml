@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.djct.stockdemo.mapper.IndexMinuteQuoteMapper">
+
+    <resultMap id="IndexMinuteQuoteResultMap"
+               type="cn.djct.stockdemo.pojo.entity.IndexMinuteQuote">
+        <id property="id" column="id"/>
+        <result property="indexCode" column="index_code"/>
+        <result property="indexName" column="index_name"/>
+        <result property="tradeDate" column="trade_date"/>
+        <result property="quoteTime" column="quote_time"/>
+        <result property="currentPrice" column="current_price"/>
+        <result property="previousClosePrice" column="previous_close_price"/>
+        <result property="dataSource" column="data_source"/>
+        <result property="collectedAt" column="collected_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!--插入或更新一条指数分钟行情。-->
+    <insert id="upsert">
+        INSERT INTO index_minute_quote (
+            index_code,
+            index_name,
+            trade_date,
+            quote_time,
+            current_price,
+            previous_close_price,
+            data_source,
+            collected_at
+        )
+        VALUES (
+            #{quote.indexCode},
+            #{quote.indexName},
+            #{quote.tradeDate},
+            #{quote.quoteTime},
+            #{quote.currentPrice},
+            #{quote.previousClosePrice},
+            #{quote.dataSource},
+            #{quote.collectedAt}
+        )
+        ON DUPLICATE KEY UPDATE
+            index_name = VALUES(index_name),
+            trade_date = VALUES(trade_date),
+            current_price = VALUES(current_price),
+            previous_close_price = VALUES(previous_close_price),
+            data_source = VALUES(data_source),
+            collected_at = VALUES(collected_at),
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <!--按时间升序查询指数分钟行情。-->
+    <select id="selectByIndexCodeAndQuoteTimeRange" resultMap="IndexMinuteQuoteResultMap">
+        SELECT
+            id,
+            index_code,
+            index_name,
+            trade_date,
+            quote_time,
+            current_price,
+            previous_close_price,
+            data_source,
+            collected_at,
+            created_at,
+            updated_at
+        FROM index_minute_quote
+        WHERE index_code = #{indexCode}
+            AND quote_time &gt;= #{startTime}
+            AND quote_time &lt;= #{endTime}
+        ORDER BY quote_time
+    </select>
+</mapper>

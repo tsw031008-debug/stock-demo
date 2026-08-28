@@ -1,0 +1,126 @@
+package cn.djct.stockdemo.service.indexdivergence.impl;
+
+import cn.djct.stockdemo.mapper.IndexMinuteQuoteMapper;
+import cn.djct.stockdemo.pojo.entity.IndexMinuteQuote;
+import cn.djct.stockdemo.service.indexdivergence.IndexMinuteQuoteSourceService;
+import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class IndexMinuteQuoteSyncServiceImplTest {
+
+    private static final LocalDate TRADE_DATE = LocalDate.of(2026, 8, 27);
+
+    @Mock
+    private TradeCalendarService tradeCalendarService;
+
+    @Mock
+    private IndexMinuteQuoteSourceService indexMinuteQuoteSourceService;
+
+    @Mock
+    private IndexMinuteQuoteMapper indexMinuteQuoteMapper;
+
+    @InjectMocks
+    private IndexMinuteQuoteSyncServiceImpl indexMinuteQuoteSyncService;
+
+    @ParameterizedTest
+    @MethodSource("validCollectionTimes")
+    void shouldSaveValidCollectionMinute(LocalTime time) {
+        LocalDateTime triggerTime = LocalDateTime.of(TRADE_DATE, time).withSecond(10);
+        IndexMinuteQuote quote = quote(triggerTime.withSecond(45));
+        when(tradeCalendarService.isTradingDay(TRADE_DATE)).thenReturn(true);
+        when(indexMinuteQuoteSourceService.fetchShanghaiComposite()).thenReturn(quote);
+        when(indexMinuteQuoteMapper.upsert(quote)).thenReturn(1);
+
+        assertEquals(1, indexMinuteQuoteSyncService.synchronize(triggerTime));
+
+        assertEquals(triggerTime.withSecond(0), quote.getQuoteTime());
+        verify(indexMinuteQuoteMapper).upsert(quote);
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidCollectionTimes")
+    void shouldSkipInvalidCollectionMinute(LocalTime time) {
+        LocalDateTime triggerTime = LocalDateTime.of(TRADE_DATE, time);
+
+        assertEquals(0, indexMinuteQuoteSyncService.synchronize(triggerTime));
+
+        verify(tradeCalendarService, never()).isTradingDay(TRADE_DATE);
+        verify(indexMinuteQuoteSourceService, never()).fetchShanghaiComposite();
+        verify(indexMinuteQuoteMapper, never()).upsert(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void shouldSkipNonTradingDay() {
+        LocalDateTime triggerTime = LocalDateTime.of(2026, 8, 29, 9, 31);
+        when(tradeCalendarService.isTradingDay(triggerTime.toLocalDate())).thenReturn(false);
+
+        assertEquals(0, indexMinuteQuoteSyncService.synchronize(triggerTime));
+
+        verify(indexMinuteQuoteSourceService, never()).fetchShanghaiComposite();
+    }
+
+    @Test
+    void shouldRejectQuoteFromAnotherMinute() {
+        LocalDateTime triggerTime = LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 32, 10));
+        when(tradeCalendarService.isTradingDay(TRADE_DATE)).thenReturn(true);
+        when(indexMinuteQuoteSourceService.fetchShanghaiComposite())
+                .thenReturn(quote(LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 31, 59))));
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> indexMinuteQuoteSyncService.synchronize(triggerTime)
+        );
+
+        verify(indexMinuteQuoteMapper, never()).upsert(org.mockito.ArgumentMatchers.any());
+    }
+
+    private static Stream<LocalTime> validCollectionTimes() {
+        return Stream.of(
+                LocalTime.of(9, 31),
+                LocalTime.of(11, 30),
+                LocalTime.of(13, 1),
+                LocalTime.of(15, 0)
+        );
+    }
+
+    private static Stream<LocalTime> invalidCollectionTimes() {
+        return Stream.of(
+                LocalTime.of(9, 30),
+                LocalTime.of(11, 31),
+                LocalTime.of(13, 0),
+                LocalTime.of(15, 1)
+        );
+    }
+
+    private IndexMinuteQuote quote(LocalDateTime quoteTime) {
+        return IndexMinuteQuote.builder()
+                .indexCode("000001")
+                .indexName("上证指数")
+                .tradeDate(quoteTime.toLocalDate())
+                .quoteTime(quoteTime)
+                .currentPrice(new BigDecimal("3850.12"))
+                .previousClosePrice(new BigDecimal("3820.10"))
+                .dataSource("TENCENT")
+                .collectedAt(quoteTime)
+                .build();
+    }
+}

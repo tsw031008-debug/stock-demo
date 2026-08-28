@@ -1,6 +1,8 @@
 package cn.djct.stockdemo.controller.stockfundflow;
 
 import cn.djct.stockdemo.mapper.NationalHolidayMapper;
+import cn.djct.stockdemo.mapper.IndexDivergenceSignalMapper;
+import cn.djct.stockdemo.mapper.IndexMinuteQuoteMapper;
 import cn.djct.stockdemo.mapper.StockBasicMapper;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.StockFundFlowMapper;
@@ -60,6 +62,10 @@ class StockFundFlowControllerTest {
     private StockPlateMapper stockPlateMapper;
     @MockBean
     private StockPlateDailyQuoteMapper stockPlateDailyQuoteMapper;
+    @MockBean
+    private IndexMinuteQuoteMapper indexMinuteQuoteMapper;
+    @MockBean
+    private IndexDivergenceSignalMapper indexDivergenceSignalMapper;
 
     @Test
     void shouldSynchronizeCurrentStockFundFlowSnapshot() throws Exception {

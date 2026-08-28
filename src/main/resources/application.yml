@@ -115,6 +115,16 @@ stock:
       connect-timeout: ${MARKET_LEVEL_SOURCE_CONNECT_TIMEOUT:5s}
       read-timeout: ${MARKET_LEVEL_SOURCE_READ_TIMEOUT:10s}
       request-interval: ${MARKET_LEVEL_SOURCE_REQUEST_INTERVAL:1s}
+  index-divergence:
+    minute-quote:
+      source:
+        url: ${INDEX_MINUTE_QUOTE_SOURCE_URL:http://qt.gtimg.cn/q=sh000001}
+        connect-timeout: ${INDEX_MINUTE_QUOTE_SOURCE_CONNECT_TIMEOUT:5s}
+        read-timeout: ${INDEX_MINUTE_QUOTE_SOURCE_READ_TIMEOUT:10s}
+        request-interval: ${INDEX_MINUTE_QUOTE_SOURCE_REQUEST_INTERVAL:1s}
+      sync:
+        enabled: ${INDEX_MINUTE_QUOTE_SYNC_ENABLED:true}
+        cron: ${INDEX_MINUTE_QUOTE_SYNC_CRON:10 * 9-15 * * *}
   plate:
     source:
       url: ${STOCK_PLATE_SOURCE_URL:http://test46.szdjct.com/exponent/manage/plate/getThsgn3LevelPlate}
