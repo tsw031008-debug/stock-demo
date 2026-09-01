@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.djct.stockdemo.mapper.MarketDailyTurnoverMapper">
+
+    <!-- 查询指定交易日的市场成交额汇总。 -->
+    <select id="selectByTradeDate"
+            resultType="cn.djct.stockdemo.pojo.entity.MarketDailyTurnover">
+        SELECT id, trade_date, turnover_amount_yuan, stock_count, amount_record_count,
+               data_source, data_status, calculated_at, created_at, updated_at
+        FROM market_daily_turnover
+        WHERE trade_date = #{tradeDate}
+    </select>
+
+    <!-- 定位每日汇总表中最新的完整交易日。 -->
+    <select id="selectLatestCompleteTradeDate" resultType="java.time.LocalDate">
+        SELECT MAX(trade_date)
+        FROM market_daily_turnover
+        WHERE data_status = 'COMPLETE'
+    </select>
+
+    <!-- 按交易日升序查询指定日期范围内的完整市场成交额汇总。 -->
+    <select id="selectCompleteByDateRange"
+            resultType="cn.djct.stockdemo.pojo.entity.MarketDailyTurnover">
+        SELECT id, trade_date, turnover_amount_yuan, stock_count, amount_record_count,
+               data_source, data_status, calculated_at, created_at, updated_at
+        FROM market_daily_turnover
+        WHERE trade_date BETWEEN #{startDate} AND #{endDate}
+          AND data_status = 'COMPLETE'
+        ORDER BY trade_date
+    </select>
+
+    <!-- 按交易日幂等插入或更新市场成交额汇总。 -->
+    <insert id="upsert">
+        INSERT INTO market_daily_turnover (
+            trade_date, turnover_amount_yuan, stock_count, amount_record_count,
+            data_source, data_status, calculated_at
+        ) VALUES (
+            #{tradeDate}, #{turnoverAmountYuan}, #{stockCount}, #{amountRecordCount},
+            #{dataSource}, #{dataStatus}, #{calculatedAt}
+        )
+        ON DUPLICATE KEY UPDATE
+            turnover_amount_yuan = VALUES(turnover_amount_yuan),
+            stock_count = VALUES(stock_count),
+            amount_record_count = VALUES(amount_record_count),
+            data_source = VALUES(data_source),
+            data_status = VALUES(data_status),
+            calculated_at = VALUES(calculated_at),
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+</mapper>

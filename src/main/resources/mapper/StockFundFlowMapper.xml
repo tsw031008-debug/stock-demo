@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.djct.stockdemo.mapper.StockFundFlowMapper">
+
+    <!-- 统计指定交易日的资金流向记录数，用于完整性校验和分页总数。 -->
+    <select id="countByTradeDate" resultType="int">
+        SELECT COUNT(*)
+        FROM stock_fund_flow
+        WHERE trade_date = #{tradeDate}
+    </select>
+
+    <!--分页查询指定交易日的资金流向原始数据-->
+    <select id="selectPageByTradeDate"
+            resultType="cn.djct.stockdemo.pojo.dto.StockFundFlowDto">
+        SELECT
+            trade_date,
+            stock_code,
+            stock_name,
+            latest_price,
+            change_percent,
+            main_net_inflow_yuan,
+            main_net_inflow_ratio,
+            super_large_net_inflow_yuan,
+            super_large_net_inflow_ratio,
+            large_net_inflow_yuan,
+            large_net_inflow_ratio
+        FROM stock_fund_flow
+        WHERE trade_date = #{tradeDate}
+        ORDER BY main_net_inflow_yuan DESC, stock_code ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 按股票代码和交易日批量插入或更新资金流向。 -->
+    <insert id="upsertBatch">
+        INSERT INTO stock_fund_flow (
+            stock_code,
+            stock_name,
+            trade_date,
+            latest_price,
+            change_percent,
+            main_net_inflow_yuan,
+            main_net_inflow_ratio,
+            super_large_net_inflow_yuan,
+            super_large_net_inflow_ratio,
+            large_net_inflow_yuan,
+            large_net_inflow_ratio,
+            data_source,
+            data_status,
+            collected_at
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.stockCode},
+            #{item.stockName},
+            #{item.tradeDate},
+            #{item.latestPrice},
+            #{item.changePercent},
+            #{item.mainNetInflowYuan},
+            #{item.mainNetInflowRatio},
+            #{item.superLargeNetInflowYuan},
+            #{item.superLargeNetInflowRatio},
+            #{item.largeNetInflowYuan},
+            #{item.largeNetInflowRatio},
+            #{item.dataSource},
+            #{item.dataStatus},
+            #{item.collectedAt}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            stock_name = VALUES(stock_name),
+            latest_price = VALUES(latest_price),
+            change_percent = VALUES(change_percent),
+            main_net_inflow_yuan = VALUES(main_net_inflow_yuan),
+            main_net_inflow_ratio = VALUES(main_net_inflow_ratio),
+            super_large_net_inflow_yuan = VALUES(super_large_net_inflow_yuan),
+            super_large_net_inflow_ratio = VALUES(super_large_net_inflow_ratio),
+            large_net_inflow_yuan = VALUES(large_net_inflow_yuan),
+            large_net_inflow_ratio = VALUES(large_net_inflow_ratio),
+            data_source = VALUES(data_source),
+            data_status = VALUES(data_status),
+            collected_at = VALUES(collected_at),
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+</mapper>

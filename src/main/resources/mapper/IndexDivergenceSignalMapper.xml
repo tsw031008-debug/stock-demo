@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.djct.stockdemo.mapper.IndexDivergenceSignalMapper">
+
+    <resultMap id="IndexDivergenceSignalResultMap"
+               type="cn.djct.stockdemo.pojo.entity.IndexDivergenceSignal">
+        <id property="id" column="id"/>
+        <result property="indexCode" column="index_code"/>
+        <result property="signalType" column="signal_type"/>
+        <result property="signalTime" column="signal_time"/>
+        <result property="previousIntervalStartTime" column="previous_interval_start_time"/>
+        <result property="previousIntervalEndTime" column="previous_interval_end_time"/>
+        <result property="currentIntervalStartTime" column="current_interval_start_time"/>
+        <result property="currentIntervalEndTime" column="current_interval_end_time"/>
+        <result property="previousPriceExtreme" column="previous_price_extreme"/>
+        <result property="currentPriceExtreme" column="current_price_extreme"/>
+        <result property="previousMacdExtreme" column="previous_macd_extreme"/>
+        <result property="currentMacdExtreme" column="current_macd_extreme"/>
+        <result property="previousDifExtreme" column="previous_dif_extreme"/>
+        <result property="currentDifExtreme" column="current_dif_extreme"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!--批量插入或更新指数MACD背离信号。-->
+    <insert id="upsertBatch">
+        INSERT INTO index_divergence_signal (
+            index_code,
+            signal_type,
+            signal_time,
+            previous_interval_start_time,
+            previous_interval_end_time,
+            current_interval_start_time,
+            current_interval_end_time,
+            previous_price_extreme,
+            current_price_extreme,
+            previous_macd_extreme,
+            current_macd_extreme,
+            previous_dif_extreme,
+            current_dif_extreme
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.indexCode},
+            #{item.signalType},
+            #{item.signalTime},
+            #{item.previousIntervalStartTime},
+            #{item.previousIntervalEndTime},
+            #{item.currentIntervalStartTime},
+            #{item.currentIntervalEndTime},
+            #{item.previousPriceExtreme},
+            #{item.currentPriceExtreme},
+            #{item.previousMacdExtreme},
+            #{item.currentMacdExtreme},
+            #{item.previousDifExtreme},
+            #{item.currentDifExtreme}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            previous_interval_start_time = VALUES(previous_interval_start_time),
+            previous_interval_end_time = VALUES(previous_interval_end_time),
+            current_interval_start_time = VALUES(current_interval_start_time),
+            current_interval_end_time = VALUES(current_interval_end_time),
+            previous_price_extreme = VALUES(previous_price_extreme),
+            current_price_extreme = VALUES(current_price_extreme),
+            previous_macd_extreme = VALUES(previous_macd_extreme),
+            current_macd_extreme = VALUES(current_macd_extreme),
+            previous_dif_extreme = VALUES(previous_dif_extreme),
+            current_dif_extreme = VALUES(current_dif_extreme),
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <!--按确认时间升序查询指数背离信号。-->
+    <select id="selectByIndexCodeAndSignalTimeRange"
+            resultMap="IndexDivergenceSignalResultMap">
+        SELECT
+            id,
+            index_code,
+            signal_type,
+            signal_time,
+            previous_interval_start_time,
+            previous_interval_end_time,
+            current_interval_start_time,
+            current_interval_end_time,
+            previous_price_extreme,
+            current_price_extreme,
+            previous_macd_extreme,
+            current_macd_extreme,
+            previous_dif_extreme,
+            current_dif_extreme,
+            created_at,
+            updated_at
+        FROM index_divergence_signal
+        WHERE index_code = #{indexCode}
+            AND signal_time &gt;= #{startTime}
+            AND signal_time &lt; #{endTime}
+        ORDER BY signal_time
+    </select>
+</mapper>

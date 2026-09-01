@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.djct.stockdemo.mapper.StockPlateDailyQuoteMapper">
+
+    <!--批量插入或更新板块日线。-->
+    <insert id="upsertBatch">
+        INSERT INTO stock_plate_daily_quote (
+            plate_id,
+            plate_name,
+            trade_date,
+            open_price,
+            close_price,
+            change_percent,
+            turnover_amount_yuan,
+            stock_count,
+            data_source,
+            data_status
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.plateId},
+            #{item.plateName},
+            #{item.tradeDate},
+            #{item.openPrice},
+            #{item.closePrice},
+            #{item.changePercent},
+            #{item.turnoverAmountYuan},
+            #{item.stockCount},
+            #{item.dataSource},
+            #{item.dataStatus}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            plate_name = VALUES(plate_name),
+            open_price = VALUES(open_price),
+            close_price = VALUES(close_price),
+            change_percent = VALUES(change_percent),
+            turnover_amount_yuan = VALUES(turnover_amount_yuan),
+            stock_count = VALUES(stock_count),
+            data_source = VALUES(data_source),
+            data_status = VALUES(data_status),
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <!--统计指定交易日的板块日线数量。-->
+    <select id="countByTradeDate" resultType="int">
+        SELECT COUNT(*)
+        FROM stock_plate_daily_quote
+        WHERE trade_date = #{tradeDate}
+    </select>
+
+    <!--统计指定交易日的完整板块日线数量。-->
+    <select id="countCompleteByTradeDate" resultType="int">
+        SELECT COUNT(*)
+        FROM stock_plate_daily_quote
+        WHERE trade_date = #{tradeDate}
+            AND data_status = 'COMPLETE'
+    </select>
+
+    <!--查询指定交易日的板块收盘值原始数据。-->
+    <select id="selectCloseByTradeDate"
+            resultType="cn.djct.stockdemo.pojo.dto.StockPlateCloseDto">
+        SELECT
+            plate_id,
+            close_price
+        FROM stock_plate_daily_quote
+        WHERE trade_date = #{tradeDate}
+        ORDER BY plate_id
+    </select>
+</mapper>

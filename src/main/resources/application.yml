@@ -1,0 +1,140 @@
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  error:
+    include-message: never
+    include-stacktrace: never
+
+spring:
+  application:
+    name: stock-demo
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL:jdbc:mysql://localhost:3306/stock_demo?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+    hikari:
+      minimum-idle: ${DB_MINIMUM_IDLE:2}
+      maximum-pool-size: ${DB_MAXIMUM_POOL_SIZE:10}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT:30000}
+      validation-timeout: 5000
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+      password: ${REDIS_PASSWORD:123456}
+      timeout: ${REDIS_TIMEOUT:3s}
+      lettuce:
+        pool:
+          max-active: ${REDIS_MAX_ACTIVE:8}
+          max-idle: ${REDIS_MAX_IDLE:8}
+          min-idle: ${REDIS_MIN_IDLE:0}
+          max-wait: ${REDIS_MAX_WAIT:3s}
+  flyway:
+    enabled: ${FLYWAY_ENABLED:false}
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: cn.djct.stockdemo
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    call-setters-on-nulls: true
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /swagger-ui.html
+    display-request-duration: true
+
+management:
+  health:
+    redis:
+      enabled: ${REDIS_HEALTH_ENABLED:false}
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: ${ROOT_LOG_LEVEL:INFO}
+    cn.djct.stockdemo: ${APP_LOG_LEVEL:INFO}
+
+stock:
+  basic:
+    source:
+      count-url: ${STOCK_BASIC_SOURCE_COUNT_URL:https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeStockCount}
+      list-url: ${STOCK_BASIC_SOURCE_LIST_URL:https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData}
+      page-size: ${STOCK_BASIC_SOURCE_PAGE_SIZE:100}
+      connect-timeout: ${STOCK_BASIC_SOURCE_CONNECT_TIMEOUT:5s}
+      read-timeout: ${STOCK_BASIC_SOURCE_READ_TIMEOUT:10s}
+      request-interval: ${STOCK_BASIC_SOURCE_REQUEST_INTERVAL:1s}
+    sync:
+      enabled: ${STOCK_BASIC_SYNC_ENABLED:true}
+      cron: ${STOCK_BASIC_SYNC_CRON:0 10 9 * * *}
+  daily-quote:
+    source:
+      url: ${STOCK_DAILY_QUOTE_SOURCE_URL:http://qt.gtimg.cn/q=}
+      connect-timeout: ${STOCK_DAILY_QUOTE_SOURCE_CONNECT_TIMEOUT:5s}
+      read-timeout: ${STOCK_DAILY_QUOTE_SOURCE_READ_TIMEOUT:10s}
+      request-interval: ${STOCK_DAILY_QUOTE_SOURCE_REQUEST_INTERVAL:1s}
+    sync:
+      enabled: ${STOCK_DAILY_QUOTE_SYNC_ENABLED:true}
+      cron: ${STOCK_DAILY_QUOTE_SYNC_CRON:0 2 15 * * *}
+  fund-flow:
+    source:
+      url: ${STOCK_FUND_FLOW_SOURCE_URL:https://push2delay.eastmoney.com/api/qt/clist/get}
+      connect-timeout: ${STOCK_FUND_FLOW_SOURCE_CONNECT_TIMEOUT:5s}
+      read-timeout: ${STOCK_FUND_FLOW_SOURCE_READ_TIMEOUT:15s}
+      request-interval: ${STOCK_FUND_FLOW_SOURCE_REQUEST_INTERVAL:2s}
+    sync:
+      enabled: ${STOCK_FUND_FLOW_SYNC_ENABLED:true}
+      cron: ${STOCK_FUND_FLOW_SYNC_CRON:0 20 15 * * *}
+  market-level:
+    source:
+      url: ${MARKET_LEVEL_SOURCE_URL:http://qt.gtimg.cn/q=s_sh000001,s_sz399106}
+      connect-timeout: ${MARKET_LEVEL_SOURCE_CONNECT_TIMEOUT:5s}
+      read-timeout: ${MARKET_LEVEL_SOURCE_READ_TIMEOUT:10s}
+      request-interval: ${MARKET_LEVEL_SOURCE_REQUEST_INTERVAL:1s}
+    daily-turnover:
+      sync:
+        enabled: ${MARKET_DAILY_TURNOVER_SYNC_ENABLED:true}
+        cron: ${MARKET_DAILY_TURNOVER_SYNC_CRON:0 4 15 * * *}
+  index-divergence:
+    minute-quote:
+      source:
+        url: ${INDEX_MINUTE_QUOTE_SOURCE_URL:http://qt.gtimg.cn/q=sh000001}
+        connect-timeout: ${INDEX_MINUTE_QUOTE_SOURCE_CONNECT_TIMEOUT:5s}
+        read-timeout: ${INDEX_MINUTE_QUOTE_SOURCE_READ_TIMEOUT:10s}
+        request-interval: ${INDEX_MINUTE_QUOTE_SOURCE_REQUEST_INTERVAL:1s}
+      sync:
+        enabled: ${INDEX_MINUTE_QUOTE_SYNC_ENABLED:true}
+        cron: ${INDEX_MINUTE_QUOTE_SYNC_CRON:10 * 9-15 * * *}
+  plate:
+    source:
+      url: ${STOCK_PLATE_SOURCE_URL:http://test46.szdjct.com/exponent/manage/plate/getThsgn3LevelPlate}
+      connect-timeout: ${STOCK_PLATE_SOURCE_CONNECT_TIMEOUT:5s}
+      read-timeout: ${STOCK_PLATE_SOURCE_READ_TIMEOUT:20s}
+    sync:
+      enabled: ${STOCK_PLATE_SYNC_ENABLED:true}
+      member-cron: ${STOCK_PLATE_MEMBER_SYNC_CRON:0 15 9 * * *}
+      daily-quote-cron: ${STOCK_PLATE_DAILY_QUOTE_SYNC_CRON:0 3 15 * * *}

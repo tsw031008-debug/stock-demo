@@ -1,0 +1,4 @@
+logging:
+  level:
+    cn.djct.stockdemo: ${APP_LOG_LEVEL:DEBUG}
+

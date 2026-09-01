@@ -1,4 +1,6 @@
 HELP.md
+.tmp/
+.codex_tmp
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -31,3 +33,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local runtime ###
+.env
+.venv/
+.cache/
+__pycache__/
+*.py[cod]
+logs/
+src/main/resources/application-local.yml

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.djct.stockdemo.mapper.NationalHolidayMapper">
+    <resultMap id="NationalHolidayResultMap" type="cn.djct.stockdemo.pojo.entity.NationalHoliday">
+        <id property="id" column="id"/>
+        <result property="holidayDate" column="holiday_date"/>
+        <result property="holidayName" column="holiday_name"/>
+        <result property="sourceTitle" column="source_title"/>
+        <result property="sourceUrl" column="source_url"/>
+        <result property="remark" column="remark"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- 按日期升序查询指定范围内的国家法定节假日。 -->
+    <select id="selectByDateRange" resultMap="NationalHolidayResultMap">
+        SELECT id,
+               holiday_date,
+               holiday_name,
+               source_title,
+               source_url,
+               remark,
+               created_at,
+               updated_at
+        FROM national_holiday
+        WHERE holiday_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY holiday_date ASC
+    </select>
+</mapper>
