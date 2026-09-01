@@ -23,6 +23,11 @@ public interface IndexMinuteQuoteMapper {
 
     /**
      * 按时间升序查询指定范围的指数分钟行情。
+     *
+     * @param indexCode 指数代码
+     * @param startTime 开始时间，包含
+     * @param endTime   结束时间，包含
+     * @return 指数分钟行情列表
      */
     List<IndexMinuteQuote> selectByIndexCodeAndQuoteTimeRange(
             @Param("indexCode") String indexCode,

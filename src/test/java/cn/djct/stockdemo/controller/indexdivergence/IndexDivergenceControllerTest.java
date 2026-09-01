@@ -3,6 +3,7 @@ package cn.djct.stockdemo.controller.indexdivergence;
 import cn.djct.stockdemo.constant.IndexDivergenceSignalType;
 import cn.djct.stockdemo.mapper.IndexDivergenceSignalMapper;
 import cn.djct.stockdemo.mapper.IndexMinuteQuoteMapper;
+import cn.djct.stockdemo.mapper.MarketDailyTurnoverMapper;
 import cn.djct.stockdemo.mapper.NationalHolidayMapper;
 import cn.djct.stockdemo.mapper.StockBasicMapper;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
@@ -60,6 +61,9 @@ class IndexDivergenceControllerTest {
     @MockBean
     private IndexDivergenceSignalMapper indexDivergenceSignalMapper;
 
+    @MockBean
+    private MarketDailyTurnoverMapper marketDailyTurnoverMapper;
+
     @Test
     void shouldReturnLatestCurveAndSignals() throws Exception {
         LocalDate tradeDate = LocalDate.of(2026, 8, 28);
@@ -82,7 +86,7 @@ class IndexDivergenceControllerTest {
         mockMvc.perform(get("/api/indexDivergence/latest"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data.tradeDate").value("2026-08-28 00:00:00"))
+                .andExpect(jsonPath("$.data.tradeDate").value("2026-08-28"))
                 .andExpect(jsonPath("$.data.previousClosePrice").value(3820.10))
                 .andExpect(jsonPath("$.data.curveData[0].quoteTime")
                         .value("2026-08-28 09:31:00"))

@@ -27,6 +27,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -74,6 +75,29 @@ class IndexDivergenceSignalServiceImplTest {
     }
 
     @Test
+    void shouldReuseIncompletePreviousTradingDayCheck() {
+        List<IndexMinuteQuote> quotes = completePreviousDayQuotes();
+        quotes.remove(quotes.size() - 1);
+        when(tradeCalendarService.getPreviousTradingDay(TRADE_DATE, 1))
+                .thenReturn(PREVIOUS_TRADE_DATE);
+        when(indexMinuteQuoteMapper.selectByIndexCodeAndQuoteTimeRange(
+                "000001",
+                LocalDateTime.of(PREVIOUS_TRADE_DATE, LocalTime.of(9, 31)),
+                CURRENT_MINUTE
+        )).thenReturn(quotes);
+
+        assertEquals(0, service.calculateAndSave(CURRENT_MINUTE));
+        assertEquals(0, service.calculateAndSave(CURRENT_MINUTE));
+
+        verify(tradeCalendarService, times(1)).getPreviousTradingDay(TRADE_DATE, 1);
+        verify(indexMinuteQuoteMapper, times(1)).selectByIndexCodeAndQuoteTimeRange(
+                "000001",
+                LocalDateTime.of(PREVIOUS_TRADE_DATE, LocalTime.of(9, 31)),
+                CURRENT_MINUTE
+        );
+    }
+
+    @Test
     void shouldSkipWhenPreviousTradingDayHasMinuteGap() {
         List<IndexMinuteQuote> quotes = completePreviousDayQuotes();
         quotes.get(100).setQuoteTime(LocalDateTime.of(PREVIOUS_TRADE_DATE, LocalTime.of(12, 0)));
@@ -95,7 +119,7 @@ class IndexDivergenceSignalServiceImplTest {
     @SuppressWarnings("unchecked")
     void shouldCalculateCrossDayMacdAndSaveCurrentDaySignal() {
         List<IndexMinuteQuote> quotes = completePreviousDayQuotes();
-        quotes.add(quote(CURRENT_MINUTE));
+        quotes.addAll(currentDayQuotes());
         List<IndexMacdDto> macdItems = List.of(macdItem(CURRENT_MINUTE));
         IndexDivergenceSignalDto signal = signal(CURRENT_MINUTE);
         when(tradeCalendarService.getPreviousTradingDay(TRADE_DATE, 1))
@@ -120,9 +144,57 @@ class IndexDivergenceSignalServiceImplTest {
     }
 
     @Test
+    void shouldSkipWhenCurrentTradingDayHasMinuteGap() {
+        List<IndexMinuteQuote> quotes = completePreviousDayQuotes();
+        List<IndexMinuteQuote> currentDayQuotes = currentDayQuotes();
+        currentDayQuotes.remove(2);
+        quotes.addAll(currentDayQuotes);
+        when(tradeCalendarService.getPreviousTradingDay(TRADE_DATE, 1))
+                .thenReturn(PREVIOUS_TRADE_DATE);
+        when(indexMinuteQuoteMapper.selectByIndexCodeAndQuoteTimeRange(
+                "000001",
+                LocalDateTime.of(PREVIOUS_TRADE_DATE, LocalTime.of(9, 31)),
+                CURRENT_MINUTE
+        )).thenReturn(quotes);
+
+        assertEquals(0, service.calculateAndSave(CURRENT_MINUTE));
+
+        verify(indexMacdCalculator, never()).calculate(anyList());
+        verify(indexDivergenceSignalMapper, never()).upsertBatch(anyList());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldSaveOnlySignalConfirmedAtCurrentMinute() {
+        List<IndexMinuteQuote> quotes = completePreviousDayQuotes();
+        quotes.addAll(currentDayQuotes());
+        List<IndexMacdDto> macdItems = List.of(macdItem(CURRENT_MINUTE));
+        when(tradeCalendarService.getPreviousTradingDay(TRADE_DATE, 1))
+                .thenReturn(PREVIOUS_TRADE_DATE);
+        when(indexMinuteQuoteMapper.selectByIndexCodeAndQuoteTimeRange(
+                "000001",
+                LocalDateTime.of(PREVIOUS_TRADE_DATE, LocalTime.of(9, 31)),
+                CURRENT_MINUTE
+        )).thenReturn(quotes);
+        when(indexMacdCalculator.calculate(quotes)).thenReturn(macdItems);
+        when(indexDivergenceSignalCalculator.detect(macdItems)).thenReturn(List.of(
+                signal(CURRENT_MINUTE.minusMinutes(1)),
+                signal(CURRENT_MINUTE)
+        ));
+        when(indexDivergenceSignalMapper.upsertBatch(anyList())).thenReturn(1);
+
+        assertEquals(1, service.calculateAndSave(CURRENT_MINUTE));
+
+        ArgumentCaptor<List<IndexDivergenceSignal>> captor = ArgumentCaptor.forClass(List.class);
+        verify(indexDivergenceSignalMapper).upsertBatch(captor.capture());
+        assertEquals(1, captor.getValue().size());
+        assertEquals(CURRENT_MINUTE, captor.getValue().get(0).getSignalTime());
+    }
+
+    @Test
     void shouldNotSaveHistoricalSignalFromWarmupDay() {
         List<IndexMinuteQuote> quotes = completePreviousDayQuotes();
-        quotes.add(quote(CURRENT_MINUTE));
+        quotes.addAll(currentDayQuotes());
         List<IndexMacdDto> macdItems = List.of(macdItem(CURRENT_MINUTE));
         when(tradeCalendarService.getPreviousTradingDay(TRADE_DATE, 1))
                 .thenReturn(PREVIOUS_TRADE_DATE);
@@ -149,6 +221,16 @@ class IndexDivergenceSignalServiceImplTest {
         LocalDateTime afternoon = LocalDateTime.of(PREVIOUS_TRADE_DATE, LocalTime.of(13, 1));
         for (int index = 0; index < 120; index++) {
             quotes.add(quote(afternoon.plusMinutes(index)));
+        }
+        return quotes;
+    }
+
+    private List<IndexMinuteQuote> currentDayQuotes() {
+        List<IndexMinuteQuote> quotes = new ArrayList<>();
+        LocalDateTime current = LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 31));
+        while (!current.isAfter(CURRENT_MINUTE)) {
+            quotes.add(quote(current));
+            current = current.plusMinutes(1);
         }
         return quotes;
     }

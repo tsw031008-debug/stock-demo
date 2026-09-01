@@ -3,6 +3,7 @@ package cn.djct.stockdemo.controller.stockalert;
 import cn.djct.stockdemo.mapper.NationalHolidayMapper;
 import cn.djct.stockdemo.mapper.IndexDivergenceSignalMapper;
 import cn.djct.stockdemo.mapper.IndexMinuteQuoteMapper;
+import cn.djct.stockdemo.mapper.MarketDailyTurnoverMapper;
 import cn.djct.stockdemo.mapper.StockBasicMapper;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.StockFundFlowMapper;
@@ -56,6 +57,9 @@ class StockAlertControllerTest {
     private IndexMinuteQuoteMapper indexMinuteQuoteMapper;
     @MockBean
     private IndexDivergenceSignalMapper indexDivergenceSignalMapper;
+
+    @MockBean
+    private MarketDailyTurnoverMapper marketDailyTurnoverMapper;
 
     @Test
     void shouldReturnSpeedAlertsWithDefaultPagination() throws Exception {

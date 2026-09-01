@@ -21,7 +21,10 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 指数MACD背离信号服务实现。
@@ -34,80 +37,145 @@ public class IndexDivergenceSignalServiceImpl implements IndexDivergenceSignalSe
     private static final String SHANGHAI_COMPOSITE_CODE = "000001";
     private static final int COMPLETE_DAY_MINUTE_COUNT = 240;
     private static final LocalTime MORNING_START = LocalTime.of(9, 31);
+    private static final LocalTime MORNING_END = LocalTime.of(11, 30);
     private static final LocalTime AFTERNOON_START = LocalTime.of(13, 1);
+    private static final LocalTime AFTERNOON_END = LocalTime.of(15, 0);
 
     private final TradeCalendarService tradeCalendarService;
     private final IndexMinuteQuoteMapper indexMinuteQuoteMapper;
     private final IndexDivergenceSignalMapper indexDivergenceSignalMapper;
     private final IndexMacdCalculator indexMacdCalculator;
     private final IndexDivergenceSignalCalculator indexDivergenceSignalCalculator;
+    private final Map<LocalDate, PreviousDayStatus> previousDayStatusCache =
+            new ConcurrentHashMap<>();
+    private final Set<LocalDate> blockedTradeDates = ConcurrentHashMap.newKeySet();
 
     /**
-     * 前一完整交易日用于MACD预热，当前交易日只保存已经结束的背离信号。
+     * 前一完整交易日用于MACD预热，只保存当前分钟新确认的背离信号。
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int calculateAndSave(LocalDateTime quoteTime) {
         Objects.requireNonNull(quoteTime, "行情时间不能为空");
         LocalDateTime currentMinute = quoteTime.truncatedTo(ChronoUnit.MINUTES);
-        LocalDate tradeDate = currentMinute.toLocalDate();
-        // 获取前一交易日
-        LocalDate previousTradeDate = tradeCalendarService.getPreviousTradingDay(tradeDate, 1);
+        LocalDate tradeDate = quoteTime.toLocalDate();
+        if (blockedTradeDates.contains(tradeDate)) {
+            return 0;
+        }
+
+        PreviousDayStatus previousDayStatus = previousDayStatusCache.get(tradeDate);
+        LocalDate previousTradeDate = previousDayStatus == null
+                ? tradeCalendarService.getPreviousTradingDay(tradeDate, 1)
+                : previousDayStatus.previousTradeDate();
+        if (previousDayStatus != null && !previousDayStatus.complete()) {
+            return 0;
+        }
         LocalDateTime startTime = LocalDateTime.of(previousTradeDate, MORNING_START);
-        // 获取当前交易日的指数分钟行情
+        // 获取前一交易日至当前分钟的指数分钟行情
         List<IndexMinuteQuote> quotes = indexMinuteQuoteMapper.selectByIndexCodeAndQuoteTimeRange(
                 SHANGHAI_COMPOSITE_CODE,
                 startTime,
                 currentMinute
         );
-        // 过滤出前一交易日的指数分钟行情数据
-        List<IndexMinuteQuote> previousDayQuotes = quotes.stream()
-                .filter(item -> previousTradeDate.equals(item.getTradeDate()))
+
+        if (previousDayStatus == null) {
+            List<IndexMinuteQuote> previousDayQuotes = quotes.stream()
+                    .filter(item -> previousTradeDate.equals(item.getTradeDate()))
+                    .toList();
+            boolean complete = hasExpectedMinutes(
+                    previousTradeDate,
+                    previousDayQuotes,
+                    AFTERNOON_END
+            );
+            previousDayStatusCache.put(
+                    tradeDate,
+                    new PreviousDayStatus(previousTradeDate, complete)
+            );
+            if (!complete) {
+                log.info("前一交易日指数分钟行情不完整，当日后续跳过正式背离信号，"
+                                + "如已补齐请重启应用，tradeDate={}，actualCount={}",
+                        previousTradeDate, previousDayQuotes.size());
+                return 0;
+            }
+        }
+
+        List<IndexMinuteQuote> currentDayQuotes = quotes.stream()
+                .filter(item -> tradeDate.equals(item.getTradeDate()))
                 .toList();
-        // 校验前一交易日的指数分钟行情是否完整
-        if (!isCompleteTradingDay(previousTradeDate, previousDayQuotes)) {
-            log.info("前一交易日指数分钟行情不完整，跳过正式背离信号，tradeDate={}，actualCount={}",
-                    previousTradeDate, previousDayQuotes.size());
+        if (!hasExpectedMinutes(tradeDate, currentDayQuotes, currentMinute.toLocalTime())) {
+            blockedTradeDates.add(tradeDate);
+            log.warn("当前交易日指数分钟行情存在缺口，当日后续跳过正式背离信号，"
+                            + "如已补齐请重启应用，tradeDate={}，currentMinute={}，actualCount={}",
+                    tradeDate, currentMinute, currentDayQuotes.size());
             return 0;
         }
 
         // 计算MACD指标
         List<IndexMacdDto> macdItems = indexMacdCalculator.calculate(quotes);
-        List<IndexDivergenceSignal> currentDaySignals = indexDivergenceSignalCalculator
+        List<IndexDivergenceSignal> currentMinuteSignals = indexDivergenceSignalCalculator
                 .detect(macdItems)
                 .stream()
-                .filter(signal -> tradeDate.equals(signal.getSignalTime().toLocalDate()))
+                .filter(signal -> currentMinute.equals(signal.getSignalTime()))
                 .map(this::toEntity)
                 .toList();
-        if (currentDaySignals.isEmpty()) {
+        if (currentMinuteSignals.isEmpty()) {
             return 0;
         }
-        indexDivergenceSignalMapper.upsertBatch(currentDaySignals);
-        return currentDaySignals.size();
+        indexDivergenceSignalMapper.upsertBatch(currentMinuteSignals);
+        return currentMinuteSignals.size();
     }
 
     /**
-     * 校验240个分钟时点，避免仅凭数量掩盖分钟缺口或午休脏数据。
+     * 校验指定结束分钟之前的全部预期时点。
      */
-    private boolean isCompleteTradingDay(LocalDate tradeDate, List<IndexMinuteQuote> quotes) {
-        if (quotes.size() != COMPLETE_DAY_MINUTE_COUNT) {
+    private boolean hasExpectedMinutes(
+            LocalDate tradeDate,
+            List<IndexMinuteQuote> quotes,
+            LocalTime endTime
+    ) {
+        List<LocalDateTime> expectedTimes = buildExpectedTimes(tradeDate, endTime);
+        if (expectedTimes.isEmpty() || quotes.size() != expectedTimes.size()) {
             return false;
         }
-        List<LocalDateTime> expectedTimes = new ArrayList<>(COMPLETE_DAY_MINUTE_COUNT);
-        LocalDateTime morning = LocalDateTime.of(tradeDate, MORNING_START);
-        for (int index = 0; index < 120; index++) {
-            expectedTimes.add(morning.plusMinutes(index));
-        }
-        LocalDateTime afternoon = LocalDateTime.of(tradeDate, AFTERNOON_START);
-        for (int index = 0; index < 120; index++) {
-            expectedTimes.add(afternoon.plusMinutes(index));
-        }
-        for (int index = 0; index < COMPLETE_DAY_MINUTE_COUNT; index++) {
+        for (int index = 0; index < expectedTimes.size(); index++) {
             if (!expectedTimes.get(index).equals(quotes.get(index).getQuoteTime())) {
                 return false;
             }
         }
         return true;
+    }
+
+    private List<LocalDateTime> buildExpectedTimes(LocalDate tradeDate, LocalTime endTime) {
+        if (!isCollectionTime(endTime)) {
+            return List.of();
+        }
+        List<LocalDateTime> expectedTimes = new ArrayList<>(COMPLETE_DAY_MINUTE_COUNT);
+        LocalTime morningLimit = endTime.isBefore(MORNING_END) ? endTime : MORNING_END;
+        appendMinuteRange(expectedTimes, tradeDate, MORNING_START, morningLimit);
+        if (!endTime.isBefore(AFTERNOON_START)) {
+            appendMinuteRange(expectedTimes, tradeDate, AFTERNOON_START, endTime);
+        }
+        return expectedTimes;
+    }
+
+    private void appendMinuteRange(
+            List<LocalDateTime> expectedTimes,
+            LocalDate tradeDate,
+            LocalTime startTime,
+            LocalTime endTime
+    ) {
+        LocalDateTime current = LocalDateTime.of(tradeDate, startTime);
+        LocalDateTime end = LocalDateTime.of(tradeDate, endTime);
+        while (!current.isAfter(end)) {
+            expectedTimes.add(current);
+            current = current.plusMinutes(1);
+        }
+    }
+
+    private boolean isCollectionTime(LocalTime time) {
+        boolean morning = !time.isBefore(MORNING_START) && !time.isAfter(MORNING_END);
+        boolean afternoon = !time.isBefore(AFTERNOON_START) && !time.isAfter(AFTERNOON_END);
+        return morning || afternoon;
     }
 
     private IndexDivergenceSignal toEntity(IndexDivergenceSignalDto signal) {
@@ -126,5 +194,8 @@ public class IndexDivergenceSignalServiceImpl implements IndexDivergenceSignalSe
                 .previousDifExtreme(signal.getPreviousDifExtreme())
                 .currentDifExtreme(signal.getCurrentDifExtreme())
                 .build();
+    }
+
+    private record PreviousDayStatus(LocalDate previousTradeDate, boolean complete) {
     }
 }

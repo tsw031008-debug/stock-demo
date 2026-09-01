@@ -115,6 +115,10 @@ stock:
       connect-timeout: ${MARKET_LEVEL_SOURCE_CONNECT_TIMEOUT:5s}
       read-timeout: ${MARKET_LEVEL_SOURCE_READ_TIMEOUT:10s}
       request-interval: ${MARKET_LEVEL_SOURCE_REQUEST_INTERVAL:1s}
+    daily-turnover:
+      sync:
+        enabled: ${MARKET_DAILY_TURNOVER_SYNC_ENABLED:true}
+        cron: ${MARKET_DAILY_TURNOVER_SYNC_CRON:0 4 15 * * *}
   index-divergence:
     minute-quote:
       source:

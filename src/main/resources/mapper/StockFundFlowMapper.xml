@@ -4,6 +4,7 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.djct.stockdemo.mapper.StockFundFlowMapper">
 
+    <!-- 统计指定交易日的资金流向记录数，用于完整性校验和分页总数。 -->
     <select id="countByTradeDate" resultType="int">
         SELECT COUNT(*)
         FROM stock_fund_flow
@@ -31,6 +32,7 @@
         LIMIT #{offset}, #{limit}
     </select>
 
+    <!-- 按股票代码和交易日批量插入或更新资金流向。 -->
     <insert id="upsertBatch">
         INSERT INTO stock_fund_flow (
             stock_code,

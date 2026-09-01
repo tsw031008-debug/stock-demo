@@ -52,7 +52,7 @@
 - 信号和选股：涨速、涨停或开板提醒、指数背离及各类选股策略。
 - 统计分析：市场水位、周月对比、股票家数和指数差异分布。
 
-顶层物理包保持技术分层，不建立 `calendar`、`market` 等一级领域包。`controller` 和 `service` 内部按实际业务模块建立子包，当前模块名统一为 `tradecalendar`、`stockbasic`、`stockdailyquote`、`stockfundflow`、`marketlevel`；Service 实现放在对应模块的 `impl` 子包。
+顶层物理包保持技术分层，不建立 `calendar`、`market` 等一级领域包。`controller` 和 `service` 内部按实际业务模块建立子包，当前模块名统一为 `tradecalendar`、`stockbasic`、`stockdailyquote`、`stockfundflow`、`marketlevel`、`stockalert`、`plate`、`indexdivergence`；Service 实现放在对应模块的 `impl` 子包。
 
 # 目录结构
 
@@ -62,21 +62,28 @@ src/main/java/cn/djct/stockdemo/
 ├─ config/              # 配置类
 ├─ constant/            # 常量和枚举
 ├─ controller/          # Web 接口，按业务模块分子包
+│  ├─ indexdivergence/
 │  ├─ marketlevel/
+│  ├─ plate/
+│  ├─ stockalert/
 │  ├─ stockbasic/
 │  ├─ stockdailyquote/
 │  ├─ stockfundflow/
 │  └─ tradecalendar/
 ├─ face/                # Task 相关的复杂操作和计算封装
-├─ filter/              # 过滤器
-├─ interceptor/         # 拦截器
 ├─ mapper/              # MyBatis Mapper 接口
 ├─ pojo/
 │  ├─ dto/              # 中间层对象，名称以 Dto 结尾
 │  ├─ entity/           # 数据源和数据库实体
 │  └─ vo/               # Web 请求或响应对象，名称以 Vo 或 RespVo 结尾
 ├─ service/             # Service接口，按业务模块分子包
+│  ├─ indexdivergence/
+│  │  └─ impl/
 │  ├─ marketlevel/
+│  │  └─ impl/
+│  ├─ plate/
+│  │  └─ impl/
+│  ├─ stockalert/
 │  │  └─ impl/
 │  ├─ stockbasic/
 │  │  └─ impl/
@@ -94,7 +101,10 @@ src/main/resources/
 ├─ db/migration/
 └─ mapper/              # MyBatis XML
 
-src/test/java/cn/djct/stockdemo/
+src/test/java/cn/djct/stockdemo/  # 按被测分层和业务模块组织
+
+scripts/                # 历史数据回补及其固定样本测试
+plan/                   # 项目推进记录和当前状态
 ```
 
 第一层包名统一以 `cn.djct.{模块名称标识}` 为前缀，本项目根包固定为 `cn.djct.stockdemo`。只创建当前功能实际需要的分层包，不要为了形式创建空目录或空接口。
@@ -115,7 +125,11 @@ src/test/java/cn/djct/stockdemo/
 - 公共接口中的日期使用 `LocalDate`，分钟时间使用 `LocalDateTime`；明确采用 `Asia/Shanghai` 时区。
 - 金额、价格、比例和指标计算使用 `BigDecimal`；禁止用 `double` 直接存储或比较金融数据。
 - 股票代码使用字符串，保留前导零；市场前缀转换集中封装，禁止散落硬编码。
-- 只在逻辑意图不明显时添加注释；复杂指标公式应说明数据区间和计算口径。
+- 避免无意义注释：不得只翻译Java或SQL语法、重复类名方法名，或描述一眼可见的赋值和流程。
+- 对业务目的、数据来源、单位转换、日期边界、异常原因、完整性守门和非直观流程，应添加适量注释帮助理解。
+- 复杂指标和统计公式必须说明数据区间、计算口径、分母含义、边界是否包含以及最终单位。
+- 公共接口和Mapper方法使用简洁Javadoc说明职责；参数、返回值或空值语义不直观时补充 `@param`、`@return`。
+- MyBatis XML中的每个SQL语句前使用简洁的 `<!-- ... -->` 注释说明其数据访问目的；排序、时间范围、状态过滤或幂等策略属于关键口径时一并说明，但不要逐句翻译SQL。
 - 全部源文件使用 UTF-8 编码。
 
 # 数据访问规范

@@ -1,5 +1,6 @@
 package cn.djct.stockdemo.pojo.vo;
 
+import com.alibaba.fastjson2.annotation.JSONField;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,6 +20,7 @@ import java.util.List;
 @AllArgsConstructor
 public class IndexDivergenceLatestRespVo {
 
+    @JSONField(format = "yyyy-MM-dd")
     @Schema(description = "数据所属交易日", example = "2026-08-28")
     private LocalDate tradeDate;
 

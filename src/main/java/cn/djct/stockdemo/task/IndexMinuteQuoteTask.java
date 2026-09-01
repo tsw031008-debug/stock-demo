@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 
 /**
  * 上证指数分钟行情定时任务。
@@ -49,7 +50,7 @@ public class IndexMinuteQuoteTask {
             int savedCount = indexMinuteQuoteSyncService.synchronize(triggerTime);
             if (savedCount > 0) {
                 // 获取 quoteMinute
-                LocalDateTime quoteMinute = triggerTime.withSecond(0).withNano(0);
+                LocalDateTime quoteMinute = triggerTime.truncatedTo(ChronoUnit.MINUTES);
                 // 计算并保存 divergence signal
                 int signalCount = indexDivergenceSignalService.calculateAndSave(quoteMinute);
                 log.info("上证指数分钟行情任务完成，triggerType={}，quoteMinute={}，savedCount={}，signalCount={}，elapsedMs={}",

@@ -32,6 +32,10 @@ stock:
   fund-flow:
     sync:
       enabled: false
+  market-level:
+    daily-turnover:
+      sync:
+        enabled: false
   index-divergence:
     minute-quote:
       sync:

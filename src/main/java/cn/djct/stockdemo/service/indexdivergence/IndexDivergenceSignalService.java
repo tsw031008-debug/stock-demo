@@ -11,7 +11,7 @@ public interface IndexDivergenceSignalService {
      * 计算并保存指定分钟新确认的背离信号。
      *
      * @param quoteTime 已入库的当前行情分钟
-     * @return 当前交易日识别到的信号数量
+     * @return 当前分钟新确认的信号数量
      */
     int calculateAndSave(LocalDateTime quoteTime);
 }
