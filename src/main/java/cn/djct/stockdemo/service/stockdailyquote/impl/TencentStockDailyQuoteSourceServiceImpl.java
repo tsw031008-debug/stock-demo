@@ -90,18 +90,32 @@ public class TencentStockDailyQuoteSourceServiceImpl implements StockDailyQuoteS
             throw new IllegalArgumentException("待查询股票不能为空");
         }
 
-        List<StockDailyQuote> quotes = new ArrayList<>(stocks.size());
-        for (int startIndex = 0; startIndex < stocks.size(); startIndex += MAX_SYMBOLS_PER_REQUEST) {
-            int endIndex = Math.min(startIndex + MAX_SYMBOLS_PER_REQUEST, stocks.size());
-            quotes.addAll(fetchBatch(tradeDate, stocks.subList(startIndex, endIndex)));
+        return fetchByCodes(
+                tradeDate,
+                stocks.stream().map(StockBasic::getStockCode).toList()
+        );
+    }
+
+    /**
+     * 只查询调用方指定的股票代码，并按腾讯单次请求上限自动分批。
+     */
+    @Override
+    public List<StockDailyQuote> fetchByCodes(LocalDate tradeDate, List<String> stockCodes) {
+        if (stockCodes == null || stockCodes.isEmpty()) {
+            throw new IllegalArgumentException("待查询股票代码不能为空");
+        }
+
+        List<StockDailyQuote> quotes = new ArrayList<>(stockCodes.size());
+        for (int startIndex = 0; startIndex < stockCodes.size(); startIndex += MAX_SYMBOLS_PER_REQUEST) {
+            int endIndex = Math.min(startIndex + MAX_SYMBOLS_PER_REQUEST, stockCodes.size());
+            quotes.addAll(fetchBatch(tradeDate, stockCodes.subList(startIndex, endIndex)));
         }
         return quotes;
     }
 
     // 获取股票行情
-    private List<StockDailyQuote> fetchBatch(LocalDate tradeDate, List<StockBasic> stocks) {
-        List<String> symbols = stocks.stream()
-                .map(StockBasic::getStockCode)
+    private List<StockDailyQuote> fetchBatch(LocalDate tradeDate, List<String> stockCodes) {
+        List<String> symbols = stockCodes.stream()
                 .map(StockMarketCodeUtil::toTencentSymbol)
                 .toList();
         URI uri = URI.create(sourceUrl + String.join(",", symbols));
@@ -112,23 +126,24 @@ public class TencentStockDailyQuoteSourceServiceImpl implements StockDailyQuoteS
         // 解析股票行情字段，确保字段顺序与腾讯行情响应字段顺序一致
         Map<String, String[]> quoteFields = parseResponse(responseText);
 
-        if (quoteFields.size() != stocks.size()) {
+        if (quoteFields.size() != stockCodes.size()) {
             throw new IllegalStateException(
-                    "腾讯行情响应数量不一致，expected=" + stocks.size() + "，actual=" + quoteFields.size()
+                    "腾讯行情响应数量不一致，expected=" + stockCodes.size()
+                            + "，actual=" + quoteFields.size()
             );
         }
 
         // 获取行情数据，确保顺序与输入股票列表一致
         LocalDateTime collectedAt = LocalDateTime.now(SHANGHAI_ZONE);
-        List<StockDailyQuote> quotes = new ArrayList<>(stocks.size());
-        for (int index = 0; index < stocks.size(); index++) {
-            StockBasic stock = stocks.get(index);
+        List<StockDailyQuote> quotes = new ArrayList<>(stockCodes.size());
+        for (int index = 0; index < stockCodes.size(); index++) {
+            String stockCode = stockCodes.get(index);
             String symbol = symbols.get(index);
             String[] fields = quoteFields.get(symbol);
             if (fields == null) {
-                throw new IllegalStateException("腾讯行情缺少股票：" + stock.getStockCode());
+                throw new IllegalStateException("腾讯行情缺少股票：" + stockCode);
             }
-            quotes.add(parseQuote(tradeDate, stock, fields, collectedAt));
+            quotes.add(parseQuote(tradeDate, stockCode, fields, collectedAt));
         }
         return quotes;
     }
@@ -191,15 +206,15 @@ public class TencentStockDailyQuoteSourceServiceImpl implements StockDailyQuoteS
     // 解析股票行情字段，确保字段顺序与腾讯行情响应字段顺序一致
     private StockDailyQuote parseQuote(
             LocalDate tradeDate,
-            StockBasic stock,
+            String expectedStockCode,
             String[] fields,
             LocalDateTime collectedAt
     ) {
         String stockCode = text(fields, 2);
         String stockName = text(fields, 1);
-        if (!stock.getStockCode().equals(stockCode)) {
+        if (!expectedStockCode.equals(stockCode)) {
             throw new IllegalStateException("腾讯行情股票代码不一致，expected="
-                    + stock.getStockCode() + "，actual=" + stockCode);
+                    + expectedStockCode + "，actual=" + stockCode);
         }
         if (stockName == null) {
             throw new IllegalStateException("腾讯行情股票名称为空，stockCode=" + stockCode);

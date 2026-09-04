@@ -4,6 +4,13 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.djct.stockdemo.mapper.StockPlateDailyQuoteMapper">
 
+    <!--定位最近一个全量板块日线已完成的交易日，避免使用未收齐的当日行情。-->
+    <select id="selectLatestCompleteTradeDate" resultType="java.time.LocalDate">
+        SELECT MAX(trade_date)
+        FROM stock_plate_daily_quote
+        WHERE data_status = 'COMPLETE'
+    </select>
+
     <!--批量插入或更新板块日线。-->
     <insert id="upsertBatch">
         INSERT INTO stock_plate_daily_quote (

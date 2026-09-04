@@ -2,6 +2,7 @@ package cn.djct.stockdemo.mapper;
 
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.pojo.dto.StockClosePriceDto;
+import cn.djct.stockdemo.pojo.dto.StockTurnoverByDateDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -65,6 +66,15 @@ class StockDailyQuoteMapperIntegrationTest {
         assertEquals("600000", result.get(0).getStockCode());
         assertEquals(0, new BigDecimal("10.50").compareTo(result.get(0).getClosePrice()));
         assertEquals(firstDate, result.get(1).getTradeDate());
+
+        List<StockTurnoverByDateDto> turnovers = stockDailyQuoteMapper
+                .selectTurnoversByTradeDates(
+                        List.of(firstDate, secondDate),
+                        List.of("600000")
+                );
+        assertEquals(2, turnovers.size());
+        assertEquals(firstDate, turnovers.get(0).getTradeDate());
+        assertEquals("600000", turnovers.get(0).getStockCode());
     }
 
     private StockDailyQuote createQuote(
@@ -78,6 +88,7 @@ class StockDailyQuoteMapperIntegrationTest {
                 .stockName(stockName)
                 .tradeDate(tradeDate)
                 .closePrice(new BigDecimal(closePrice))
+                .turnoverAmountYuan(new BigDecimal(closePrice).multiply(new BigDecimal("100000000")))
                 .dataSource("TENCENT")
                 .dataStatus("COMPLETE")
                 .collectedAt(LocalDateTime.of(2026, 8, 20, 15, 3))

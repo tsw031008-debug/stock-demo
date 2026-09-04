@@ -83,6 +83,31 @@ class TencentStockDailyQuoteSourceServiceImplTest {
     }
 
     @Test
+    void shouldFetchOnlySpecifiedStockCodes() {
+        RestTemplate restTemplate = new RestTemplate();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(restTemplate).build();
+        server.expect(requestTo(allOf(
+                        containsString("q=sh600519"),
+                        containsString("sz000001")
+                )))
+                .andRespond(withSuccess(
+                        (quoteLine("600519", "贵州茅台", null)
+                                + quoteLine("000001", "平安银行", null)).getBytes(GB18030),
+                        TENCENT_MEDIA_TYPE
+                ));
+        TencentStockDailyQuoteSourceServiceImpl sourceService = createSourceService(restTemplate);
+
+        List<StockDailyQuote> quotes = sourceService.fetchByCodes(
+                TRADE_DATE,
+                List.of("600519", "000001")
+        );
+
+        assertEquals(List.of("600519", "000001"),
+                quotes.stream().map(StockDailyQuote::getStockCode).toList());
+        server.verify();
+    }
+
+    @Test
     void shouldRejectChangedDuplicateHighField() {
         RestTemplate restTemplate = new RestTemplate();
         MockRestServiceServer server = MockRestServiceServer.bindTo(restTemplate).build();

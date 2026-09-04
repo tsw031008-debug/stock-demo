@@ -36,6 +36,18 @@
         LIMIT #{limit}
     </select>
 
+    <!--从最新股票基础信息快照查询指定代码，用于校验自定义成分股。-->
+    <select id="selectLatestByCodes" resultType="cn.djct.stockdemo.pojo.entity.StockBasic">
+        SELECT id, stock_code, stock_name, last_seen_trade_date, created_at, updated_at
+        FROM stock_basic
+        WHERE last_seen_trade_date = (SELECT MAX(last_seen_trade_date) FROM stock_basic)
+          AND stock_code IN
+            <foreach collection="stockCodes" item="stockCode" open="(" separator="," close=")">
+                #{stockCode}
+            </foreach>
+        ORDER BY stock_code
+    </select>
+
     <!-- 批量插入或更新股票基础信息 -->
     <insert id="upsertBatch">
         INSERT INTO stock_basic (

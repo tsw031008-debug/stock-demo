@@ -1,10 +1,10 @@
 package cn.djct.stockdemo.controller.tradecalendar;
 
 import cn.djct.stockdemo.common.Result;
+import cn.djct.stockdemo.pojo.dto.TradeCalendarInitializeDto;
 import cn.djct.stockdemo.pojo.vo.TradingDayOffsetRespVo;
 import cn.djct.stockdemo.pojo.vo.TradingDayRespVo;
 import cn.djct.stockdemo.pojo.vo.TradeCalendarInitializeRespVo;
-import cn.djct.stockdemo.pojo.vo.TradeCalendarInitializeVo;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -104,7 +104,7 @@ public class TradeCalendarController {
     @Operation(summary = "初始化指定日期范围内的交易日历")
     @PostMapping("/initialize")
     public Result<TradeCalendarInitializeRespVo> initialize(
-            @Valid @RequestBody TradeCalendarInitializeVo request
+            @Valid @RequestBody TradeCalendarInitializeDto request
     ) {
         //指定起始日期和结束日期，返回新增数量
         int insertedCount = tradeCalendarService.initialize(

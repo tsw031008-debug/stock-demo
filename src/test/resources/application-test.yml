@@ -40,3 +40,7 @@ stock:
     minute-quote:
       sync:
         enabled: false
+  index-style:
+    daily-quote:
+      sync:
+        enabled: false

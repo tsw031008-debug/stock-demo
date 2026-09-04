@@ -2,6 +2,7 @@ package cn.djct.stockdemo.mapper;
 
 import cn.djct.stockdemo.pojo.dto.MarketTurnoverRecordDto;
 import cn.djct.stockdemo.pojo.dto.StockClosePriceDto;
+import cn.djct.stockdemo.pojo.dto.StockTurnoverByDateDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -49,6 +50,18 @@ public interface StockDailyQuoteMapper {
      * @return 股票行情原始数据
      */
     List<StockDailyQuote> selectForPlateCalculation(@Param("tradeDate") LocalDate tradeDate);
+
+    /**
+     * 查询指定交易日的股票成交额原始记录。
+     *
+     * @param tradeDates 交易日列表
+     * @param stockCodes 参与四大类计算的股票代码
+     * @return 按股票和日期区分的成交额
+     */
+    List<StockTurnoverByDateDto> selectTurnoversByTradeDates(
+            @Param("tradeDates") List<LocalDate> tradeDates,
+            @Param("stockCodes") List<String> stockCodes
+    );
 
     /**
      * 批量插入或更新行情数据。

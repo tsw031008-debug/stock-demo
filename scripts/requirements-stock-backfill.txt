@@ -4,3 +4,4 @@ requests==2.34.2
 cryptography==50.0.0
 tushare==1.4.29
 zzshare==0.4.9
+akshare==1.18.40

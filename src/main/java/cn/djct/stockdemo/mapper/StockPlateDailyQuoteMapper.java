@@ -15,6 +15,13 @@ import java.util.List;
 public interface StockPlateDailyQuoteMapper {
 
     /**
+     * 定位最近一个已完成全量板块日线计算的交易日。
+     *
+     * @return 最近完整交易日，无数据时返回null
+     */
+    LocalDate selectLatestCompleteTradeDate();
+
+    /**
      * 批量插入或更新板块日线。
      *
      * @param quotes 板块日线列表

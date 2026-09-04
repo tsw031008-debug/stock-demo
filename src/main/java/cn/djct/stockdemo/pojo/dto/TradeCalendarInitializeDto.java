@@ -1,4 +1,4 @@
-package cn.djct.stockdemo.pojo.vo;
+package cn.djct.stockdemo.pojo.dto;
 
 import com.alibaba.fastjson2.annotation.JSONField;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,11 +9,11 @@ import lombok.Data;
 import java.time.LocalDate;
 
 /**
- * 交易日历初始化请求。
+ * 交易日历初始化请求参数。
  */
 @Data
 @Schema(description = "交易日历初始化请求")
-public class TradeCalendarInitializeVo {
+public class TradeCalendarInitializeDto {
 
     @NotNull(message = "开始日期不能为空")
     @JSONField(format = "yyyy-MM-dd")

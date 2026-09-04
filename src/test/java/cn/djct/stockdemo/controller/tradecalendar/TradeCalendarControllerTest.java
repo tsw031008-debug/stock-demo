@@ -1,10 +1,12 @@
 package cn.djct.stockdemo.controller.tradecalendar;
 
 import cn.djct.stockdemo.mapper.NationalHolidayMapper;
+import cn.djct.stockdemo.mapper.IndexDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.IndexDivergenceSignalMapper;
 import cn.djct.stockdemo.mapper.IndexMinuteQuoteMapper;
 import cn.djct.stockdemo.mapper.MarketDailyTurnoverMapper;
 import cn.djct.stockdemo.mapper.StockBasicMapper;
+import cn.djct.stockdemo.mapper.StockCustomPlateMapper;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.StockFundFlowMapper;
 import cn.djct.stockdemo.mapper.StockPlateDailyQuoteMapper;
@@ -32,6 +34,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class TradeCalendarControllerTest {
 
+    @MockBean
+    private IndexDailyQuoteMapper indexDailyQuoteMapper;
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -46,6 +51,8 @@ class TradeCalendarControllerTest {
 
     @MockBean
     private StockBasicMapper stockBasicMapper;
+    @MockBean
+    private StockCustomPlateMapper stockCustomPlateMapper;
 
     @MockBean
     private StockDailyQuoteMapper stockDailyQuoteMapper;

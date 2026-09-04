@@ -61,6 +61,22 @@
         ORDER BY stock_code
     </select>
 
+    <!--查询板块水位计算使用的股票成交额原始记录，不在SQL中进行业务汇总。-->
+    <select id="selectTurnoversByTradeDates"
+            resultType="cn.djct.stockdemo.pojo.dto.StockTurnoverByDateDto">
+        SELECT stock_code, trade_date, turnover_amount_yuan
+        FROM stock_daily_quote
+        WHERE trade_date IN
+            <foreach collection="tradeDates" item="tradeDate" open="(" separator="," close=")">
+                #{tradeDate}
+            </foreach>
+          AND stock_code IN
+            <foreach collection="stockCodes" item="stockCode" open="(" separator="," close=")">
+                #{stockCode}
+            </foreach>
+        ORDER BY trade_date, stock_code
+    </select>
+
     <!--批量Upsert行情数据-->
     <insert id="upsertBatch">
         INSERT INTO stock_daily_quote (

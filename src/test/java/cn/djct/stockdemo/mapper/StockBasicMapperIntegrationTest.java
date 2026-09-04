@@ -51,6 +51,11 @@ class StockBasicMapperIntegrationTest {
                         .stream()
                         .map(StockBasic::getStockCode)
                         .toList());
+        assertEquals(List.of("600000"), stockBasicMapper.selectLatestByCodes(
+                        List.of("000001", "600000")
+                ).stream()
+                .map(StockBasic::getStockCode)
+                .toList());
     }
 
     private StockBasic createStock(String stockCode, String stockName, LocalDate tradeDate) {

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.djct.stockdemo.mapper.IndexDailyQuoteMapper">
+
+    <!--批量幂等保存指数日行情，重复交易日使用最新完整行情覆盖。-->
+    <insert id="upsertBatch">
+        INSERT INTO index_daily_quote (
+            index_code,
+            index_name,
+            trade_date,
+            quote_time,
+            close_price,
+            previous_close_price,
+            data_source,
+            collected_at
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.indexCode},
+            #{item.indexName},
+            #{item.tradeDate},
+            #{item.quoteTime},
+            #{item.closePrice},
+            #{item.previousClosePrice},
+            #{item.dataSource},
+            #{item.collectedAt}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            index_name = VALUES(index_name),
+            quote_time = VALUES(quote_time),
+            close_price = VALUES(close_price),
+            previous_close_price = VALUES(previous_close_price),
+            data_source = VALUES(data_source),
+            collected_at = VALUES(collected_at),
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <!--定位已保存指数日行情的最新交易日。-->
+    <select id="selectLatestTradeDate" resultType="java.time.LocalDate">
+        SELECT MAX(trade_date)
+        FROM index_daily_quote
+    </select>
+
+    <!--查询五日强弱计算所需的固定指数日行情，不在SQL中计算涨幅或强弱。-->
+    <select id="selectByTradeDatesAndCodes"
+            resultType="cn.djct.stockdemo.pojo.entity.IndexDailyQuote">
+        SELECT
+            index_code,
+            index_name,
+            trade_date,
+            quote_time,
+            close_price,
+            previous_close_price,
+            data_source,
+            collected_at
+        FROM index_daily_quote
+        WHERE trade_date IN
+            <foreach collection="tradeDates" item="tradeDate" open="(" separator="," close=")">
+                #{tradeDate}
+            </foreach>
+          AND index_code IN
+            <foreach collection="indexCodes" item="indexCode" open="(" separator="," close=")">
+                #{indexCode}
+            </foreach>
+        ORDER BY trade_date, index_code
+    </select>
+</mapper>

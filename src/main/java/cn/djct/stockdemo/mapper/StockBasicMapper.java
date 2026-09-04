@@ -40,6 +40,14 @@ public interface StockBasicMapper {
     );
 
     /**
+     * 从最新基础信息快照查询指定股票。
+     *
+     * @param stockCodes 股票代码
+     * @return 存在于最新快照的股票
+     */
+    List<StockBasic> selectLatestByCodes(@Param("stockCodes") List<String> stockCodes);
+
+    /**
      * 批量插入或更新股票快照。
       * @param stocks 股票快照列表
       * @return 影响行数

@@ -52,7 +52,7 @@
 - 信号和选股：涨速、涨停或开板提醒、指数背离及各类选股策略。
 - 统计分析：市场水位、周月对比、股票家数和指数差异分布。
 
-顶层物理包保持技术分层，不建立 `calendar`、`market` 等一级领域包。`controller` 和 `service` 内部按实际业务模块建立子包，当前模块名统一为 `tradecalendar`、`stockbasic`、`stockdailyquote`、`stockfundflow`、`marketlevel`、`stockalert`、`plate`、`indexdivergence`；Service 实现放在对应模块的 `impl` 子包。
+顶层物理包保持技术分层，不建立 `calendar`、`market` 等一级领域包。`controller` 和 `service` 内部按实际业务模块建立子包，当前模块名统一为 `tradecalendar`、`stockbasic`、`stockdailyquote`、`stockfundflow`、`marketlevel`、`stockalert`、`plate`、`indexdivergence`、`indexstyle`；Service 实现放在对应模块的 `impl` 子包。
 
 # 目录结构
 
@@ -63,6 +63,7 @@ src/main/java/cn/djct/stockdemo/
 ├─ constant/            # 常量和枚举
 ├─ controller/          # Web 接口，按业务模块分子包
 │  ├─ indexdivergence/
+│  ├─ indexstyle/
 │  ├─ marketlevel/
 │  ├─ plate/
 │  ├─ stockalert/
@@ -73,11 +74,13 @@ src/main/java/cn/djct/stockdemo/
 ├─ face/                # Task 相关的复杂操作和计算封装
 ├─ mapper/              # MyBatis Mapper 接口
 ├─ pojo/
-│  ├─ dto/              # 中间层对象，名称以 Dto 结尾
+│  ├─ dto/              # Web请求参数及中间层传输对象，名称以 Dto 结尾
 │  ├─ entity/           # 数据源和数据库实体
-│  └─ vo/               # Web 请求或响应对象，名称以 Vo 或 RespVo 结尾
+│  └─ vo/               # Web响应对象，名称以 Vo 或 RespVo 结尾
 ├─ service/             # Service接口，按业务模块分子包
 │  ├─ indexdivergence/
+│  │  └─ impl/
+│  ├─ indexstyle/
 │  │  └─ impl/
 │  ├─ marketlevel/
 │  │  └─ impl/
@@ -115,13 +118,14 @@ plan/                   # 项目推进记录和当前状态
 - 方法和变量使用 lowerCamelCase，如 `findPreviousTradeDate`。
 - 常量使用 UPPER_SNAKE_CASE，如 `MAX_SYMBOLS_PER_REQUEST`。
 - 包名全部小写，使用 `cn.djct.stockdemo` 作为根包。
-- DTO 放在 `pojo.dto`，类名以 `Dto` 结尾。
+- 前端传给后端的Web请求参数统一使用DTO接收，放在 `pojo.dto`，类名以 `Dto` 结尾；`@RequestBody` 禁止使用VO。
+- Service与Controller之间需要封装传输的数据也使用DTO，禁止直接传递数据库实体。
 - 数据源和数据库实体放在 `pojo.entity`。
-- Web 请求或响应对象放在 `pojo.vo`，类名以 `Vo` 或 `RespVo` 结尾。
+- 后端返回前端的Web响应对象统一使用VO，放在 `pojo.vo`，类名以 `Vo` 或 `RespVo` 结尾。
 - 定时任务类放在 `task`，复杂计算和操作放在 `face`，禁止在 Task 中堆积业务实现。
 - REST 接口路径的每个路径段使用 lowerCamelCase，例如 `/api/tradeCalendar/previousTradingDay`；禁止使用连字符或下划线分隔单词。
 - 优先使用构造器注入，禁止字段注入。
-- 使用明确的 DTO、VO 和领域对象，禁止直接把数据库实体作为公共 API 响应。
+- 使用明确的请求DTO、响应VO和领域对象，禁止直接把数据库实体作为请求参数或公共API响应。
 - 公共接口中的日期使用 `LocalDate`，分钟时间使用 `LocalDateTime`；明确采用 `Asia/Shanghai` 时区。
 - 金额、价格、比例和指标计算使用 `BigDecimal`；禁止用 `double` 直接存储或比较金融数据。
 - 股票代码使用字符串，保留前导零；市场前缀转换集中封装，禁止散落硬编码。
