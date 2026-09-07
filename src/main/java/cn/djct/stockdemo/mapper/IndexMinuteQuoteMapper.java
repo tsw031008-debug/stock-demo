@@ -22,6 +22,14 @@ public interface IndexMinuteQuoteMapper {
     int upsert(@Param("quote") IndexMinuteQuote quote);
 
     /**
+     * 批量插入或更新指数分钟行情。
+     *
+     * @param quotes 指数分钟行情列表
+     * @return 影响行数
+     */
+    int upsertBatch(@Param("list") List<IndexMinuteQuote> quotes);
+
+    /**
      * 按时间升序查询指定范围的指数分钟行情。
      *
      * @param indexCode 指数代码

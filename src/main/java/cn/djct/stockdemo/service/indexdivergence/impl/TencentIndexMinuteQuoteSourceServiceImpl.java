@@ -2,6 +2,9 @@ package cn.djct.stockdemo.service.indexdivergence.impl;
 
 import cn.djct.stockdemo.pojo.entity.IndexMinuteQuote;
 import cn.djct.stockdemo.service.indexdivergence.IndexMinuteQuoteSourceService;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,12 +21,18 @@ import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.locks.LockSupport;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,12 +53,15 @@ public class TencentIndexMinuteQuoteSourceServiceImpl implements IndexMinuteQuot
     private static final ZoneId SHANGHAI_ZONE = ZoneId.of("Asia/Shanghai");
     private static final DateTimeFormatter QUOTE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+    private static final DateTimeFormatter MINUTE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("HHmm");
     private static final Pattern QUOTE_PATTERN = Pattern.compile(
             "v_sh000001=\"([^\"]*)\";"
     );
 
     private final RestTemplate restTemplate;
     private final URI sourceUri;
+    private final URI minuteHistoryUri;
     private final RequestRateLimiter requestRateLimiter;
 
     /**
@@ -59,6 +71,8 @@ public class TencentIndexMinuteQuoteSourceServiceImpl implements IndexMinuteQuot
     public TencentIndexMinuteQuoteSourceServiceImpl(
             RestTemplateBuilder restTemplateBuilder,
             @Value("${stock.index-divergence.minute-quote.source.url}") String sourceUrl,
+            @Value("${stock.index-divergence.minute-quote.source.history-url}")
+            String minuteHistoryUrl,
             @Value("${stock.index-divergence.minute-quote.source.connect-timeout:5s}")
             Duration connectTimeout,
             @Value("${stock.index-divergence.minute-quote.source.read-timeout:10s}")
@@ -72,6 +86,7 @@ public class TencentIndexMinuteQuoteSourceServiceImpl implements IndexMinuteQuot
                         .setReadTimeout(readTimeout)
                         .build(),
                 sourceUrl,
+                minuteHistoryUrl,
                 requestInterval
         );
     }
@@ -81,8 +96,18 @@ public class TencentIndexMinuteQuoteSourceServiceImpl implements IndexMinuteQuot
             String sourceUrl,
             Duration requestInterval
     ) {
+        this(restTemplate, sourceUrl, sourceUrl, requestInterval);
+    }
+
+    TencentIndexMinuteQuoteSourceServiceImpl(
+            RestTemplate restTemplate,
+            String sourceUrl,
+            String minuteHistoryUrl,
+            Duration requestInterval
+    ) {
         this.restTemplate = restTemplate;
         this.sourceUri = URI.create(sourceUrl);
+        this.minuteHistoryUri = URI.create(minuteHistoryUrl);
         this.requestRateLimiter = new RequestRateLimiter(requestInterval);
     }
 
@@ -91,7 +116,7 @@ public class TencentIndexMinuteQuoteSourceServiceImpl implements IndexMinuteQuot
      */
     @Override
     public IndexMinuteQuote fetchShanghaiComposite() {
-        String responseText = new String(request(), TENCENT_CHARSET);
+        String responseText = new String(request(sourceUri, "实时行情"), TENCENT_CHARSET);
         Matcher matcher = QUOTE_PATTERN.matcher(responseText);
         if (!matcher.find()) {
             throw new IllegalStateException("腾讯上证指数行情格式错误");
@@ -136,9 +161,79 @@ public class TencentIndexMinuteQuoteSourceServiceImpl implements IndexMinuteQuot
     }
 
     /**
+     * 获取腾讯最近交易日的完整分时列表，用于恢复应用停机造成的分钟缺口。
+     */
+    @Override
+    public List<IndexMinuteQuote> fetchShanghaiCompositeMinutes() {
+        String responseText = new String(
+                request(minuteHistoryUri, "当日分时行情"),
+                StandardCharsets.UTF_8
+        );
+        try {
+            JSONObject root = JSON.parseObject(responseText);
+            JSONObject data = root.getJSONObject("data");
+            JSONObject indexData = data == null ? null : data.getJSONObject("sh000001");
+            JSONObject minuteData = indexData == null ? null : indexData.getJSONObject("data");
+            JSONObject quoteData = indexData == null ? null : indexData.getJSONObject("qt");
+            JSONArray quoteFields = quoteData == null ? null : quoteData.getJSONArray("sh000001");
+            JSONArray minuteRows = minuteData == null ? null : minuteData.getJSONArray("data");
+            String sourceDateText = minuteData == null ? null : minuteData.getString("date");
+            if (quoteFields == null || quoteFields.size() <= PREVIOUS_CLOSE_FIELD_INDEX
+                    || minuteRows == null || minuteRows.isEmpty() || sourceDateText == null) {
+                throw new IllegalStateException("腾讯上证指数当日分时行情字段不完整");
+            }
+
+            String indexName = requiredText(quoteFields.getString(1), "指数名称");
+            String indexCode = requiredText(quoteFields.getString(2), "指数代码");
+            if (!SHANGHAI_COMPOSITE_CODE.equals(indexCode)) {
+                throw new IllegalStateException("腾讯上证指数代码错误，actual=" + indexCode);
+            }
+            BigDecimal previousClosePrice = positiveDecimal(
+                    quoteFields.getString(PREVIOUS_CLOSE_FIELD_INDEX),
+                    "昨收价"
+            );
+            LocalDate sourceDate = LocalDate.parse(
+                    sourceDateText,
+                    DateTimeFormatter.BASIC_ISO_DATE
+            );
+            LocalDateTime collectedAt = LocalDateTime.now(SHANGHAI_ZONE);
+            List<IndexMinuteQuote> result = new ArrayList<>(minuteRows.size());
+            Set<LocalDateTime> quoteTimes = new HashSet<>();
+            for (int index = 0; index < minuteRows.size(); index++) {
+                String row = requiredText(minuteRows.getString(index), "分时记录");
+                String[] fields = row.split("\\s+");
+                if (fields.length < 2) {
+                    throw new IllegalStateException("腾讯上证指数分时记录字段不足，row=" + row);
+                }
+                LocalDateTime quoteTime = LocalDateTime.of(
+                        sourceDate,
+                        LocalTime.parse(fields[0], MINUTE_TIME_FORMATTER)
+                );
+                if (!quoteTimes.add(quoteTime)) {
+                    throw new IllegalStateException("腾讯上证指数分时记录时间重复，quoteTime="
+                            + quoteTime);
+                }
+                result.add(IndexMinuteQuote.builder()
+                        .indexCode(indexCode)
+                        .indexName(indexName)
+                        .tradeDate(sourceDate)
+                        .quoteTime(quoteTime)
+                        .currentPrice(positiveDecimal(fields[1], "分时价格"))
+                        .previousClosePrice(previousClosePrice)
+                        .dataSource("TENCENT")
+                        .collectedAt(collectedAt)
+                        .build());
+            }
+            return result;
+        } catch (DateTimeParseException exception) {
+            throw new IllegalStateException("腾讯上证指数当日分时行情时间格式错误", exception);
+        }
+    }
+
+    /**
      * 请求腾讯上证指数行情，失败时最多重试一次。
      */
-    private byte[] request() {
+    private byte[] request(URI uri, String sourceName) {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(List.of(MediaType.TEXT_PLAIN, MediaType.ALL));
         headers.set(HttpHeaders.REFERER, "https://gu.qq.com/");
@@ -150,7 +245,7 @@ public class TencentIndexMinuteQuoteSourceServiceImpl implements IndexMinuteQuot
             long startTime = System.currentTimeMillis();
             try {
                 ResponseEntity<byte[]> response = restTemplate.exchange(
-                        sourceUri,
+                        uri,
                         HttpMethod.GET,
                         new HttpEntity<>(headers),
                         byte[].class
@@ -159,30 +254,37 @@ public class TencentIndexMinuteQuoteSourceServiceImpl implements IndexMinuteQuot
                 if (body == null || body.length == 0) {
                     throw new IllegalStateException("腾讯上证指数行情响应为空");
                 }
-                log.info("腾讯上证指数行情请求完成，attempt={}，elapsedMs={}",
-                        attempt, System.currentTimeMillis() - startTime);
+                log.info("腾讯上证指数{}请求完成，attempt={}，elapsedMs={}",
+                        sourceName, attempt, System.currentTimeMillis() - startTime);
                 return body;
             } catch (RestClientException exception) {
                 lastException = exception;
-                log.warn("腾讯上证指数行情请求失败，attempt={}，reason={}",
-                        attempt, exception.getMessage());
+                log.warn("腾讯上证指数{}请求失败，attempt={}，reason={}",
+                        sourceName, attempt, exception.getMessage());
             }
         }
         throw new IllegalStateException("腾讯上证指数行情请求失败", lastException);
     }
 
     private String requiredText(String[] fields, int index, String fieldName) {
-        String value = fields[index].strip();
-        if (value.isEmpty()) {
+        return requiredText(fields[index], fieldName);
+    }
+
+    private String requiredText(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
             throw new IllegalStateException("腾讯上证指数" + fieldName + "为空");
         }
-        return value;
+        return value.strip();
     }
 
     private BigDecimal positiveDecimal(String[] fields, int index, String fieldName) {
-        String value = requiredText(fields, index, fieldName);
+        return positiveDecimal(requiredText(fields, index, fieldName), fieldName);
+    }
+
+    private BigDecimal positiveDecimal(String value, String fieldName) {
+        String actualValue = requiredText(value, fieldName);
         try {
-            BigDecimal number = new BigDecimal(value);
+            BigDecimal number = new BigDecimal(actualValue);
             // 大于0
             if (number.signum() <= 0) {
                 throw new IllegalStateException("腾讯上证指数" + fieldName + "必须大于0");

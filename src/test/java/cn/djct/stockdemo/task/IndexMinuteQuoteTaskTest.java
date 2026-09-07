@@ -52,4 +52,23 @@ class IndexMinuteQuoteTaskTest {
                 () -> indexMinuteQuoteTask.synchronize(triggerTime, "TEST")
         );
     }
+
+    @Test
+    void shouldDelegateMinuteRecovery() {
+        LocalDateTime checkTime = LocalDateTime.of(2026, 8, 27, 15, 2, 30);
+        when(indexMinuteQuoteSyncService.recoverMissingMinutes(checkTime)).thenReturn(2);
+
+        assertEquals(2, indexMinuteQuoteTask.recover(checkTime, "TEST"));
+
+        verify(indexMinuteQuoteSyncService).recoverMissingMinutes(checkTime);
+    }
+
+    @Test
+    void shouldKeepApplicationStartupWhenRecoveryFails() {
+        LocalDateTime checkTime = LocalDateTime.of(2026, 8, 27, 10, 0);
+        doThrow(new IllegalStateException("分时接口不可用"))
+                .when(indexMinuteQuoteSyncService).recoverMissingMinutes(checkTime);
+
+        assertEquals(0, indexMinuteQuoteTask.recoverAfterStartup(checkTime));
+    }
 }

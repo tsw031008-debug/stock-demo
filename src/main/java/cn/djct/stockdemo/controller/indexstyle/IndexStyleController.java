@@ -2,12 +2,17 @@ package cn.djct.stockdemo.controller.indexstyle;
 
 import cn.djct.stockdemo.common.Result;
 import cn.djct.stockdemo.pojo.dto.IndexDailyStyleDto;
+import cn.djct.stockdemo.pojo.dto.IndexEtfChangeDto;
+import cn.djct.stockdemo.pojo.dto.IndexEtfComparisonDto;
 import cn.djct.stockdemo.pojo.dto.IndexStyleComparisonDto;
 import cn.djct.stockdemo.pojo.dto.IndexStyleItemDto;
 import cn.djct.stockdemo.pojo.vo.IndexDailyStyleRespVo;
+import cn.djct.stockdemo.pojo.vo.IndexEtfChangeRespVo;
+import cn.djct.stockdemo.pojo.vo.IndexEtfComparisonRespVo;
 import cn.djct.stockdemo.pojo.vo.IndexStyleComparisonRespVo;
 import cn.djct.stockdemo.pojo.vo.IndexStyleItemRespVo;
 import cn.djct.stockdemo.service.indexstyle.IndexStyleService;
+import cn.djct.stockdemo.service.indexstyle.IndexEtfService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +35,7 @@ public class IndexStyleController {
             DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private final IndexStyleService indexStyleService;
+    private final IndexEtfService indexEtfService;
 
     /**
      * 查询四个固定指数最近五个完整交易日的强弱结果。
@@ -40,6 +46,17 @@ public class IndexStyleController {
     @GetMapping("/latest")
     public Result<IndexStyleComparisonRespVo> getLatest() {
         return Result.success("操作成功", toResponse(indexStyleService.getLatest()));
+    }
+
+    /**
+     * 查询四只固定指数ETF最新完整交易日的5日涨幅。
+     *
+     * @return ETF 5日涨幅比较
+     */
+    @Operation(summary = "查询四只指数ETF的5日涨幅")
+    @GetMapping("/etfChange")
+    public Result<IndexEtfComparisonRespVo> getEtfChange() {
+        return Result.success("操作成功", toEtfResponse(indexEtfService.getLatest()));
     }
 
     private IndexStyleComparisonRespVo toResponse(IndexStyleComparisonDto comparison) {
@@ -69,6 +86,24 @@ public class IndexStyleController {
                 .tradeDate(dailyStyle.getTradeDate())
                 .changePercent(dailyStyle.getChangePercent())
                 .strengthType(dailyStyle.getStrengthType())
+                .build();
+    }
+
+    private IndexEtfComparisonRespVo toEtfResponse(IndexEtfComparisonDto comparison) {
+        return IndexEtfComparisonRespVo.builder()
+                .statisticsDate(comparison.getStatisticsDate())
+                .baseTradeDate(comparison.getBaseTradeDate())
+                .etfs(comparison.getEtfs().stream()
+                        .map(this::toEtfItemResponse)
+                        .toList())
+                .build();
+    }
+
+    private IndexEtfChangeRespVo toEtfItemResponse(IndexEtfChangeDto item) {
+        return IndexEtfChangeRespVo.builder()
+                .etfCode(item.getEtfCode())
+                .indexName(item.getIndexName())
+                .changePercent(item.getChangePercent())
                 .build();
     }
 }

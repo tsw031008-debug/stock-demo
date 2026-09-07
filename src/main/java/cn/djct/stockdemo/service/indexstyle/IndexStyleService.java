@@ -8,7 +8,7 @@ import cn.djct.stockdemo.pojo.dto.IndexStyleComparisonDto;
 public interface IndexStyleService {
 
     /**
-     * 查询最近五个完整交易日的指数强弱结果。
+     * 查询最近五个交易日的指数强弱结果，交易日开盘后包含今天。
      *
      * @return 指数五日强弱比较
      */

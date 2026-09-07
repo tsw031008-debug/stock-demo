@@ -56,6 +56,15 @@ class IndexMinuteQuoteMapperIntegrationTest {
         assertEquals(2, result.size());
         assertEquals(firstMinute, result.get(0).getQuoteTime());
         assertEquals(firstMinute.plusMinutes(1), result.get(1).getQuoteTime());
+
+        assertEquals(2, indexMinuteQuoteMapper.upsertBatch(List.of(
+                quote(firstMinute.plusMinutes(2), "3852.10"),
+                quote(firstMinute.plusMinutes(3), "3853.10")
+        )));
+        assertEquals(4, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM index_minute_quote",
+                Integer.class
+        ));
     }
 
     private IndexMinuteQuote quote(LocalDateTime quoteTime, String currentPrice) {
