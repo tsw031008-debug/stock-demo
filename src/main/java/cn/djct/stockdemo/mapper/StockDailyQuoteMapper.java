@@ -17,6 +17,13 @@ import java.util.List;
 public interface StockDailyQuoteMapper {
 
     /**
+     * 查询股票日行情最新交易日。
+     *
+     * @return 最新交易日；没有数据时返回null
+     */
+    LocalDate selectLatestTradeDate();
+
+    /**
      * 根据交易日查询行情数据条数。
      * @param tradeDate 交易日
      * @return  行情数据条数

@@ -66,6 +66,7 @@ class StockDailyQuoteMapperIntegrationTest {
         assertEquals("600000", result.get(0).getStockCode());
         assertEquals(0, new BigDecimal("10.50").compareTo(result.get(0).getClosePrice()));
         assertEquals(firstDate, result.get(1).getTradeDate());
+        assertEquals(tradeDate, stockDailyQuoteMapper.selectLatestTradeDate());
 
         List<StockTurnoverByDateDto> turnovers = stockDailyQuoteMapper
                 .selectTurnoversByTradeDates(

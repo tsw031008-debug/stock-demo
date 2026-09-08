@@ -16,8 +16,10 @@ import cn.djct.stockdemo.mapper.TradeCalendarMapper;
 import cn.djct.stockdemo.pojo.dto.MarketLevelDto;
 import cn.djct.stockdemo.pojo.dto.MarketPeriodComparisonDto;
 import cn.djct.stockdemo.pojo.dto.MarketPeriodItemDto;
+import cn.djct.stockdemo.pojo.dto.RecentStockRiseCountDto;
 import cn.djct.stockdemo.service.marketlevel.MarketLevelService;
 import cn.djct.stockdemo.service.marketlevel.MarketPeriodComparisonService;
+import cn.djct.stockdemo.service.marketlevel.RecentStockRiseCountService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -52,6 +54,9 @@ class MarketLevelControllerTest {
 
     @MockBean
     private MarketPeriodComparisonService marketPeriodComparisonService;
+
+    @MockBean
+    private RecentStockRiseCountService recentStockRiseCountService;
 
     @MockBean
     private NationalHolidayMapper nationalHolidayMapper;
@@ -115,6 +120,25 @@ class MarketLevelControllerTest {
                 .andExpect(jsonPath("$.data.weekly[0].comparisonType").value("YOY"))
                 .andExpect(jsonPath("$.data.weekly[0].averageTurnoverYi").value(9000.00))
                 .andExpect(jsonPath("$.data.monthly[0].periodLabel").value("2026年08月"));
+    }
+
+    @Test
+    void shouldReturnRecentStockRiseCounts() throws Exception {
+        LocalDate tradeDate = LocalDate.of(2026, 9, 4);
+        when(recentStockRiseCountService.getLatest()).thenReturn(List.of(
+                RecentStockRiseCountDto.builder()
+                        .tradeDate(tradeDate)
+                        .fiveDayRiseCount(494)
+                        .tenDayRiseCount(1031)
+                        .build()
+        ));
+
+        mockMvc.perform(get("/api/marketLevel/recentStockCounts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data[0].tradeDate").value("2026-09-04"))
+                .andExpect(jsonPath("$.data[0].fiveDayRiseCount").value(494))
+                .andExpect(jsonPath("$.data[0].tenDayRiseCount").value(1031));
     }
 
     private MarketPeriodItemDto item(String type, String label, String average) {
