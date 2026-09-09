@@ -9,10 +9,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * 指数分钟行情同步服务实现。
@@ -26,6 +33,8 @@ public class IndexMinuteQuoteSyncServiceImpl implements IndexMinuteQuoteSyncServ
     private static final LocalTime MORNING_END = LocalTime.of(11, 30);
     private static final LocalTime AFTERNOON_START = LocalTime.of(13, 1);
     private static final LocalTime AFTERNOON_END = LocalTime.of(15, 0);
+    private static final String SHANGHAI_COMPOSITE_CODE = "000001";
+    private static final int COMPLETE_DAY_MINUTE_COUNT = 240;
 
     private final TradeCalendarService tradeCalendarService;
     private final IndexMinuteQuoteSourceService indexMinuteQuoteSourceService;
@@ -68,6 +77,113 @@ public class IndexMinuteQuoteSyncServiceImpl implements IndexMinuteQuoteSyncServ
         quote.setTradeDate(quoteMinute.toLocalDate());
         quote.setQuoteTime(quoteMinute);
         return indexMinuteQuoteMapper.upsert(quote);
+    }
+
+    /**
+     * 仅在数据库存在分钟缺口时请求腾讯当日完整分时，并补录真实缺失数据。
+     */
+    @Override
+    public int recoverMissingMinutes(LocalDateTime checkTime) {
+        Objects.requireNonNull(checkTime, "完整性检查时间不能为空");
+        LocalDateTime actualCheckTime = checkTime.truncatedTo(ChronoUnit.MINUTES);
+        if (!tradeCalendarService.isTradingDay(actualCheckTime.toLocalDate())) {
+            return 0;
+        }
+
+        LocalTime endTime = resolveRecoveryEndTime(actualCheckTime.toLocalTime());
+        if (endTime == null) {
+            return 0;
+        }
+        List<LocalDateTime> expectedTimes = buildExpectedTimes(
+                actualCheckTime.toLocalDate(),
+                endTime
+        );
+        List<IndexMinuteQuote> existingQuotes = indexMinuteQuoteMapper
+                .selectByIndexCodeAndQuoteTimeRange(
+                        SHANGHAI_COMPOSITE_CODE,
+                        expectedTimes.get(0),
+                        expectedTimes.get(expectedTimes.size() - 1)
+                );
+        Set<LocalDateTime> existingTimes = new HashSet<>();
+        for (IndexMinuteQuote quote : existingQuotes) {
+            existingTimes.add(quote.getQuoteTime());
+        }
+        List<LocalDateTime> missingTimes = expectedTimes.stream()
+                .filter(expectedTime -> !existingTimes.contains(expectedTime))
+                .toList();
+        if (missingTimes.isEmpty()) {
+            return 0;
+        }
+
+        List<IndexMinuteQuote> sourceQuotes = indexMinuteQuoteSourceService
+                .fetchShanghaiCompositeMinutes();
+        Map<LocalDateTime, IndexMinuteQuote> sourceQuoteByTime = new HashMap<>();
+        for (IndexMinuteQuote quote : sourceQuotes) {
+            if (!SHANGHAI_COMPOSITE_CODE.equals(quote.getIndexCode())
+                    || !actualCheckTime.toLocalDate().equals(quote.getTradeDate())) {
+                throw new IllegalStateException("腾讯上证指数分时日期或代码不匹配，expectedDate="
+                        + actualCheckTime.toLocalDate() + "，actualDate=" + quote.getTradeDate()
+                        + "，actualCode=" + quote.getIndexCode());
+            }
+            if (sourceQuoteByTime.put(quote.getQuoteTime(), quote) != null) {
+                throw new IllegalStateException("腾讯上证指数分时时间重复，quoteTime="
+                        + quote.getQuoteTime());
+            }
+        }
+
+        List<IndexMinuteQuote> missingQuotes = new ArrayList<>(missingTimes.size());
+        for (LocalDateTime missingTime : missingTimes) {
+            IndexMinuteQuote quote = sourceQuoteByTime.get(missingTime);
+            if (quote == null) {
+                throw new IllegalStateException("腾讯上证指数分时数据仍不完整，missingTime="
+                        + missingTime);
+            }
+            missingQuotes.add(quote);
+        }
+        int savedCount = indexMinuteQuoteMapper.upsertBatch(missingQuotes);
+        log.info("上证指数分钟缺口补录完成，tradeDate={}，endTime={}，missingCount={}，savedCount={}",
+                actualCheckTime.toLocalDate(), endTime, missingQuotes.size(), savedCount);
+        return savedCount;
+    }
+
+    /**
+     * 盘前不检查；午休检查上午数据；收盘后检查全天240个时点。
+     */
+    private LocalTime resolveRecoveryEndTime(LocalTime checkTime) {
+        if (checkTime.isBefore(MORNING_START)) {
+            return null;
+        }
+        if (!checkTime.isAfter(MORNING_END) || checkTime.isBefore(AFTERNOON_START)) {
+            return checkTime.isAfter(MORNING_END) ? MORNING_END : checkTime;
+        }
+        return checkTime.isAfter(AFTERNOON_END) ? AFTERNOON_END : checkTime;
+    }
+
+    private List<LocalDateTime> buildExpectedTimes(
+            LocalDate tradeDate,
+            LocalTime endTime
+    ) {
+        List<LocalDateTime> result = new ArrayList<>(COMPLETE_DAY_MINUTE_COUNT);
+        appendMinuteRange(result, tradeDate, MORNING_START,
+                endTime.isAfter(MORNING_END) ? MORNING_END : endTime);
+        if (!endTime.isBefore(AFTERNOON_START)) {
+            appendMinuteRange(result, tradeDate, AFTERNOON_START, endTime);
+        }
+        return result;
+    }
+
+    private void appendMinuteRange(
+            List<LocalDateTime> result,
+            LocalDate tradeDate,
+            LocalTime startTime,
+            LocalTime endTime
+    ) {
+        LocalDateTime current = LocalDateTime.of(tradeDate, startTime);
+        LocalDateTime end = LocalDateTime.of(tradeDate, endTime);
+        while (!current.isAfter(end)) {
+            result.add(current);
+            current = current.plusMinutes(1);
+        }
     }
 
     /**

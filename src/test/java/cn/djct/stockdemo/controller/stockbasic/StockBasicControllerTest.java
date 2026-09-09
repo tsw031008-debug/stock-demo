@@ -2,6 +2,7 @@ package cn.djct.stockdemo.controller.stockbasic;
 
 import cn.djct.stockdemo.mapper.NationalHolidayMapper;
 import cn.djct.stockdemo.mapper.IndexDailyQuoteMapper;
+import cn.djct.stockdemo.mapper.IndexEtfDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.IndexDivergenceSignalMapper;
 import cn.djct.stockdemo.mapper.IndexMinuteQuoteMapper;
 import cn.djct.stockdemo.mapper.MarketDailyTurnoverMapper;
@@ -34,6 +35,9 @@ class StockBasicControllerTest {
 
     @MockBean
     private IndexDailyQuoteMapper indexDailyQuoteMapper;
+
+    @MockBean
+    private IndexEtfDailyQuoteMapper indexEtfDailyQuoteMapper;
 
     @Autowired
     private MockMvc mockMvc;

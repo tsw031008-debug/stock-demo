@@ -2,6 +2,7 @@ package cn.djct.stockdemo.controller.stockalert;
 
 import cn.djct.stockdemo.mapper.NationalHolidayMapper;
 import cn.djct.stockdemo.mapper.IndexDailyQuoteMapper;
+import cn.djct.stockdemo.mapper.IndexEtfDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.IndexDivergenceSignalMapper;
 import cn.djct.stockdemo.mapper.IndexMinuteQuoteMapper;
 import cn.djct.stockdemo.mapper.MarketDailyTurnoverMapper;
@@ -15,7 +16,10 @@ import cn.djct.stockdemo.mapper.TradeCalendarMapper;
 import cn.djct.stockdemo.pojo.dto.PageDto;
 import cn.djct.stockdemo.pojo.dto.StockOpenBoardAlertDto;
 import cn.djct.stockdemo.pojo.dto.StockSpeedAlertDto;
+import cn.djct.stockdemo.pojo.dto.TechnologyStockRankDto;
+import cn.djct.stockdemo.pojo.dto.TechnologyStockRankingDto;
 import cn.djct.stockdemo.service.stockalert.StockAlertService;
+import cn.djct.stockdemo.service.stockalert.TechnologyStockRankingService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -39,11 +43,16 @@ class StockAlertControllerTest {
     @MockBean
     private IndexDailyQuoteMapper indexDailyQuoteMapper;
 
+    @MockBean
+    private IndexEtfDailyQuoteMapper indexEtfDailyQuoteMapper;
+
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
     private StockAlertService stockAlertService;
+    @MockBean
+    private TechnologyStockRankingService technologyStockRankingService;
     @MockBean
     private NationalHolidayMapper nationalHolidayMapper;
     @MockBean
@@ -123,5 +132,35 @@ class StockAlertControllerTest {
                 .andExpect(jsonPath("$.data.records[0].stockCode").value("600000"))
                 .andExpect(jsonPath("$.data.records[0].turnoverYi").value(8.25))
                 .andExpect(jsonPath("$.data.records[0].ask1VolumeHand").doesNotExist());
+    }
+
+    @Test
+    void shouldReturnTechnologyStockRankings() throws Exception {
+        when(technologyStockRankingService.getLatest()).thenReturn(
+                TechnologyStockRankingDto.builder()
+                        .statisticsDate(java.time.LocalDate.of(2026, 9, 7))
+                        .hotStocks(List.of(rank(1, "000001", "科技一")))
+                        .potentialStocks(List.of(rank(1, "600000", "科技二")))
+                        .build()
+        );
+
+        mockMvc.perform(get("/api/stockAlert/technologyStocks"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.message").value("操作成功"))
+                .andExpect(jsonPath("$.data.statisticsDate").value("2026-09-07"))
+                .andExpect(jsonPath("$.data.hotStocks[0].rank").value(1))
+                .andExpect(jsonPath("$.data.hotStocks[0].stockCode").value("000001"))
+                .andExpect(jsonPath("$.data.hotStocks[0].stockName").value("科技一"))
+                .andExpect(jsonPath("$.data.potentialStocks[0].stockCode").value("600000"));
+        verify(technologyStockRankingService).getLatest();
+    }
+
+    private TechnologyStockRankDto rank(int rank, String stockCode, String stockName) {
+        return TechnologyStockRankDto.builder()
+                .rank(rank)
+                .stockCode(stockCode)
+                .stockName(stockName)
+                .build();
     }
 }

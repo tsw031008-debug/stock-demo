@@ -4,17 +4,22 @@ import cn.djct.stockdemo.common.Result;
 import cn.djct.stockdemo.pojo.dto.MarketLevelDto;
 import cn.djct.stockdemo.pojo.dto.MarketPeriodComparisonDto;
 import cn.djct.stockdemo.pojo.dto.MarketPeriodItemDto;
+import cn.djct.stockdemo.pojo.dto.RecentStockRiseCountDto;
 import cn.djct.stockdemo.pojo.vo.MarketLevelRespVo;
 import cn.djct.stockdemo.pojo.vo.MarketPeriodComparisonRespVo;
 import cn.djct.stockdemo.pojo.vo.MarketPeriodItemRespVo;
+import cn.djct.stockdemo.pojo.vo.RecentStockRiseCountRespVo;
 import cn.djct.stockdemo.service.marketlevel.MarketLevelService;
 import cn.djct.stockdemo.service.marketlevel.MarketPeriodComparisonService;
+import cn.djct.stockdemo.service.marketlevel.RecentStockRiseCountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * 市场水位接口。
@@ -27,6 +32,7 @@ public class MarketLevelController {
 
     private final MarketLevelService marketLevelService;
     private final MarketPeriodComparisonService marketPeriodComparisonService;
+    private final RecentStockRiseCountService recentStockRiseCountService;
 
     /**
      * 查询最新市场水位。
@@ -66,6 +72,21 @@ public class MarketLevelController {
         return Result.success("操作成功", response);
     }
 
+    /**
+     * 查询近期股票涨幅家数。
+     *
+     * @return 最近10个交易日的5日和10日涨幅家数
+     */
+    @Operation(summary = "查询近期股票涨幅家数")
+    @GetMapping("/recentStockCounts")
+    public Result<List<RecentStockRiseCountRespVo>> getRecentStockCounts() {
+        List<RecentStockRiseCountRespVo> response = recentStockRiseCountService.getLatest()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+        return Result.success("操作成功", response);
+    }
+
     private MarketPeriodItemRespVo toResponse(MarketPeriodItemDto item) {
         return MarketPeriodItemRespVo.builder()
                 .comparisonType(item.getComparisonType())
@@ -75,6 +96,14 @@ public class MarketLevelController {
                 .tradingDayCount(item.getTradingDayCount())
                 .averageTurnoverYi(item.getAverageTurnoverYi())
                 .available(item.getAvailable())
+                .build();
+    }
+
+    private RecentStockRiseCountRespVo toResponse(RecentStockRiseCountDto item) {
+        return RecentStockRiseCountRespVo.builder()
+                .tradeDate(item.getTradeDate())
+                .fiveDayRiseCount(item.getFiveDayRiseCount())
+                .tenDayRiseCount(item.getTenDayRiseCount())
                 .build();
     }
 }

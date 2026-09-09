@@ -4,10 +4,15 @@ import cn.djct.stockdemo.common.Result;
 import cn.djct.stockdemo.pojo.dto.PageDto;
 import cn.djct.stockdemo.pojo.dto.StockOpenBoardAlertDto;
 import cn.djct.stockdemo.pojo.dto.StockSpeedAlertDto;
+import cn.djct.stockdemo.pojo.dto.TechnologyStockRankDto;
+import cn.djct.stockdemo.pojo.dto.TechnologyStockRankingDto;
 import cn.djct.stockdemo.pojo.vo.PageRespVo;
 import cn.djct.stockdemo.pojo.vo.StockOpenBoardAlertRespVo;
 import cn.djct.stockdemo.pojo.vo.StockSpeedAlertRespVo;
+import cn.djct.stockdemo.pojo.vo.TechnologyStockRankRespVo;
+import cn.djct.stockdemo.pojo.vo.TechnologyStockRankingRespVo;
 import cn.djct.stockdemo.service.stockalert.StockAlertService;
+import cn.djct.stockdemo.service.stockalert.TechnologyStockRankingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +33,7 @@ import java.util.List;
 public class StockAlertController {
 
     private final StockAlertService stockAlertService;
+    private final TechnologyStockRankingService technologyStockRankingService;
 
     /**
      * 分页查询涨速预警股票。
@@ -87,6 +93,22 @@ public class StockAlertController {
     }
 
     /**
+     * 查询热门和潜力科技股前五名。
+     *
+     * @return 日行情表最新交易日的两组科技股榜单
+     */
+    @Operation(summary = "查询热门和潜力科技股前五名")
+    @GetMapping("/technologyStocks")
+    public Result<TechnologyStockRankingRespVo> findTechnologyStocks() {
+        TechnologyStockRankingDto ranking = technologyStockRankingService.getLatest();
+        return Result.success("操作成功", TechnologyStockRankingRespVo.builder()
+                .statisticsDate(ranking.getStatisticsDate())
+                .hotStocks(toRankResponses(ranking.getHotStocks()))
+                .potentialStocks(toRankResponses(ranking.getPotentialStocks()))
+                .build());
+    }
+
+    /**
      * 将业务分页数据转换为接口分页响应。
      */
     private <S, T> PageRespVo<T> toPageResponse(PageDto<S> page, List<T> records) {
@@ -97,5 +119,17 @@ public class StockAlertController {
                 .total(page.getTotal())
                 .records(records)
                 .build();
+    }
+
+    private List<TechnologyStockRankRespVo> toRankResponses(
+            List<TechnologyStockRankDto> rankings
+    ) {
+        return rankings.stream()
+                .map(ranking -> TechnologyStockRankRespVo.builder()
+                        .rank(ranking.getRank())
+                        .stockCode(ranking.getStockCode())
+                        .stockName(ranking.getStockName())
+                        .build())
+                .toList();
     }
 }

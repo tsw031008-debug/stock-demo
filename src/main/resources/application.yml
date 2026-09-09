@@ -80,6 +80,12 @@ logging:
     cn.djct.stockdemo: ${APP_LOG_LEVEL:INFO}
 
 stock:
+  alert:
+    technology:
+      source:
+        url: ${TECHNOLOGY_STOCK_POOL_SOURCE_URL:http://test46.szdjct.com/exponent/manage/plate/getStockByPlateId?plateId=676}
+        connect-timeout: ${TECHNOLOGY_STOCK_POOL_SOURCE_CONNECT_TIMEOUT:5s}
+        read-timeout: ${TECHNOLOGY_STOCK_POOL_SOURCE_READ_TIMEOUT:20s}
   basic:
     source:
       count-url: ${STOCK_BASIC_SOURCE_COUNT_URL:https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeStockCount}
@@ -123,12 +129,14 @@ stock:
     minute-quote:
       source:
         url: ${INDEX_MINUTE_QUOTE_SOURCE_URL:http://qt.gtimg.cn/q=sh000001}
+        history-url: ${INDEX_MINUTE_QUOTE_HISTORY_URL:https://web.ifzq.gtimg.cn/appstock/app/minute/query?code=sh000001}
         connect-timeout: ${INDEX_MINUTE_QUOTE_SOURCE_CONNECT_TIMEOUT:5s}
         read-timeout: ${INDEX_MINUTE_QUOTE_SOURCE_READ_TIMEOUT:10s}
         request-interval: ${INDEX_MINUTE_QUOTE_SOURCE_REQUEST_INTERVAL:1s}
       sync:
         enabled: ${INDEX_MINUTE_QUOTE_SYNC_ENABLED:true}
         cron: ${INDEX_MINUTE_QUOTE_SYNC_CRON:10 * 9-15 * * *}
+        recovery-cron: ${INDEX_MINUTE_QUOTE_RECOVERY_CRON:30 2 15 * * *}
   index-style:
     daily-quote:
       source:
@@ -139,6 +147,15 @@ stock:
       sync:
         enabled: ${INDEX_STYLE_DAILY_QUOTE_SYNC_ENABLED:true}
         cron: ${INDEX_STYLE_DAILY_QUOTE_SYNC_CRON:0 6 15 * * *}
+    etf-daily-quote:
+      source:
+        url: ${INDEX_ETF_DAILY_QUOTE_SOURCE_URL:http://qt.gtimg.cn/q=}
+        connect-timeout: ${INDEX_ETF_DAILY_QUOTE_SOURCE_CONNECT_TIMEOUT:5s}
+        read-timeout: ${INDEX_ETF_DAILY_QUOTE_SOURCE_READ_TIMEOUT:10s}
+        request-interval: ${INDEX_ETF_DAILY_QUOTE_SOURCE_REQUEST_INTERVAL:1s}
+      sync:
+        enabled: ${INDEX_ETF_DAILY_QUOTE_SYNC_ENABLED:true}
+        cron: ${INDEX_ETF_DAILY_QUOTE_SYNC_CRON:0 7 15 * * *}
   plate:
     source:
       url: ${STOCK_PLATE_SOURCE_URL:http://test46.szdjct.com/exponent/manage/plate/getThsgn3LevelPlate}

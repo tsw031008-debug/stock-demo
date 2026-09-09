@@ -16,6 +16,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -93,6 +95,84 @@ class IndexMinuteQuoteSyncServiceImplTest {
         verify(indexMinuteQuoteMapper, never()).upsert(org.mockito.ArgumentMatchers.any());
     }
 
+    @Test
+    void shouldNotRequestSourceWhenMinutesAreComplete() {
+        LocalDateTime checkTime = LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 32));
+        when(tradeCalendarService.isTradingDay(TRADE_DATE)).thenReturn(true);
+        when(indexMinuteQuoteMapper.selectByIndexCodeAndQuoteTimeRange(
+                "000001",
+                LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 31)),
+                checkTime
+        )).thenReturn(List.of(
+                quote(LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 31))),
+                quote(checkTime)
+        ));
+
+        assertEquals(0, indexMinuteQuoteSyncService.recoverMissingMinutes(checkTime));
+
+        verify(indexMinuteQuoteSourceService, never()).fetchShanghaiCompositeMinutes();
+        verify(indexMinuteQuoteMapper, never()).upsertBatch(org.mockito.ArgumentMatchers.anyList());
+    }
+
+    @Test
+    void shouldOnlySaveMissingMinutes() {
+        LocalDateTime checkTime = LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 32));
+        IndexMinuteQuote missingQuote = quote(checkTime);
+        when(tradeCalendarService.isTradingDay(TRADE_DATE)).thenReturn(true);
+        when(indexMinuteQuoteMapper.selectByIndexCodeAndQuoteTimeRange(
+                "000001",
+                LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 31)),
+                checkTime
+        )).thenReturn(List.of(quote(LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 31)))));
+        when(indexMinuteQuoteSourceService.fetchShanghaiCompositeMinutes()).thenReturn(List.of(
+                quote(LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 31))),
+                missingQuote
+        ));
+        when(indexMinuteQuoteMapper.upsertBatch(List.of(missingQuote))).thenReturn(1);
+
+        assertEquals(1, indexMinuteQuoteSyncService.recoverMissingMinutes(checkTime));
+
+        verify(indexMinuteQuoteMapper).upsertBatch(List.of(missingQuote));
+    }
+
+    @Test
+    void shouldRejectIncompleteRecoverySourceWithoutWriting() {
+        LocalDateTime checkTime = LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 32));
+        when(tradeCalendarService.isTradingDay(TRADE_DATE)).thenReturn(true);
+        when(indexMinuteQuoteMapper.selectByIndexCodeAndQuoteTimeRange(
+                "000001",
+                LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 31)),
+                checkTime
+        )).thenReturn(List.of(quote(LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 31)))));
+        when(indexMinuteQuoteSourceService.fetchShanghaiCompositeMinutes()).thenReturn(
+                List.of(quote(LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 31))))
+        );
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> indexMinuteQuoteSyncService.recoverMissingMinutes(checkTime)
+        );
+
+        verify(indexMinuteQuoteMapper, never()).upsertBatch(org.mockito.ArgumentMatchers.anyList());
+    }
+
+    @Test
+    void shouldCheckAllTradingMinutesAfterClose() {
+        LocalDateTime checkTime = LocalDateTime.of(TRADE_DATE, LocalTime.of(15, 2));
+        List<IndexMinuteQuote> completeQuotes = completeDayQuotes();
+        when(tradeCalendarService.isTradingDay(TRADE_DATE)).thenReturn(true);
+        when(indexMinuteQuoteMapper.selectByIndexCodeAndQuoteTimeRange(
+                "000001",
+                LocalDateTime.of(TRADE_DATE, LocalTime.of(9, 31)),
+                LocalDateTime.of(TRADE_DATE, LocalTime.of(15, 0))
+        )).thenReturn(completeQuotes);
+
+        assertEquals(0, indexMinuteQuoteSyncService.recoverMissingMinutes(checkTime));
+        assertEquals(240, completeQuotes.size());
+
+        verify(indexMinuteQuoteSourceService, never()).fetchShanghaiCompositeMinutes();
+    }
+
     private static Stream<LocalTime> validCollectionTimes() {
         return Stream.of(
                 LocalTime.of(9, 31),
@@ -122,5 +202,25 @@ class IndexMinuteQuoteSyncServiceImplTest {
                 .dataSource("TENCENT")
                 .collectedAt(quoteTime)
                 .build();
+    }
+
+    private List<IndexMinuteQuote> completeDayQuotes() {
+        List<IndexMinuteQuote> result = new ArrayList<>(240);
+        appendQuotes(result, LocalTime.of(9, 31), LocalTime.of(11, 30));
+        appendQuotes(result, LocalTime.of(13, 1), LocalTime.of(15, 0));
+        return result;
+    }
+
+    private void appendQuotes(
+            List<IndexMinuteQuote> result,
+            LocalTime startTime,
+            LocalTime endTime
+    ) {
+        LocalDateTime current = LocalDateTime.of(TRADE_DATE, startTime);
+        LocalDateTime end = LocalDateTime.of(TRADE_DATE, endTime);
+        while (!current.isAfter(end)) {
+            result.add(quote(current));
+            current = current.plusMinutes(1);
+        }
     }
 }

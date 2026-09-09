@@ -44,3 +44,6 @@ stock:
     daily-quote:
       sync:
         enabled: false
+    etf-daily-quote:
+      sync:
+        enabled: false

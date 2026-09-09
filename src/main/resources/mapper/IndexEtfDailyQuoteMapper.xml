@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.djct.stockdemo.mapper.IndexEtfDailyQuoteMapper">
+
+    <!--批量幂等保存ETF日行情，重复交易日使用最新完整行情覆盖。-->
+    <insert id="upsertBatch">
+        INSERT INTO index_etf_daily_quote (
+            etf_code,
+            index_name,
+            trade_date,
+            quote_time,
+            close_price,
+            data_source,
+            collected_at
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.etfCode},
+                #{item.indexName},
+                #{item.tradeDate},
+                #{item.quoteTime},
+                #{item.closePrice},
+                #{item.dataSource},
+                #{item.collectedAt}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            index_name = VALUES(index_name),
+            quote_time = VALUES(quote_time),
+            close_price = VALUES(close_price),
+            data_source = VALUES(data_source),
+            collected_at = VALUES(collected_at),
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <!--定位ETF日行情表中的最新交易日。-->
+    <select id="selectLatestTradeDate" resultType="java.time.LocalDate">
+        SELECT MAX(trade_date)
+        FROM index_etf_daily_quote
+    </select>
+
+    <!--查询5日涨幅计算所需的起止交易日原始收盘价，涨幅在Service计算。-->
+    <select id="selectByTradeDatesAndCodes"
+            resultType="cn.djct.stockdemo.pojo.entity.IndexEtfDailyQuote">
+        SELECT
+            id,
+            etf_code,
+            index_name,
+            trade_date,
+            quote_time,
+            close_price,
+            data_source,
+            collected_at,
+            created_at,
+            updated_at
+        FROM index_etf_daily_quote
+        WHERE trade_date IN
+            <foreach collection="tradeDates" item="tradeDate" open="(" separator="," close=")">
+                #{tradeDate}
+            </foreach>
+          AND etf_code IN
+            <foreach collection="etfCodes" item="etfCode" open="(" separator="," close=")">
+                #{etfCode}
+            </foreach>
+        ORDER BY trade_date, etf_code
+    </select>
+</mapper>

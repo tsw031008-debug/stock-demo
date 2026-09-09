@@ -51,6 +51,41 @@
             updated_at = CURRENT_TIMESTAMP
     </insert>
 
+    <!--批量幂等补录缺失的指数分钟行情。-->
+    <insert id="upsertBatch">
+        INSERT INTO index_minute_quote (
+            index_code,
+            index_name,
+            trade_date,
+            quote_time,
+            current_price,
+            previous_close_price,
+            data_source,
+            collected_at
+        )
+        VALUES
+        <foreach collection="list" item="quote" separator=",">
+            (
+                #{quote.indexCode},
+                #{quote.indexName},
+                #{quote.tradeDate},
+                #{quote.quoteTime},
+                #{quote.currentPrice},
+                #{quote.previousClosePrice},
+                #{quote.dataSource},
+                #{quote.collectedAt}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            index_name = VALUES(index_name),
+            trade_date = VALUES(trade_date),
+            current_price = VALUES(current_price),
+            previous_close_price = VALUES(previous_close_price),
+            data_source = VALUES(data_source),
+            collected_at = VALUES(collected_at),
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+
     <!--按时间升序查询指数分钟行情。-->
     <select id="selectByIndexCodeAndQuoteTimeRange" resultMap="IndexMinuteQuoteResultMap">
         SELECT

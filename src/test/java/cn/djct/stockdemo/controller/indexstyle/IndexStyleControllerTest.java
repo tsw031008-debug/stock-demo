@@ -2,6 +2,7 @@ package cn.djct.stockdemo.controller.indexstyle;
 
 import cn.djct.stockdemo.constant.IndexStrengthType;
 import cn.djct.stockdemo.mapper.IndexDailyQuoteMapper;
+import cn.djct.stockdemo.mapper.IndexEtfDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.IndexDivergenceSignalMapper;
 import cn.djct.stockdemo.mapper.IndexMinuteQuoteMapper;
 import cn.djct.stockdemo.mapper.MarketDailyTurnoverMapper;
@@ -14,9 +15,12 @@ import cn.djct.stockdemo.mapper.StockPlateDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.StockPlateMapper;
 import cn.djct.stockdemo.mapper.TradeCalendarMapper;
 import cn.djct.stockdemo.pojo.dto.IndexDailyStyleDto;
+import cn.djct.stockdemo.pojo.dto.IndexEtfChangeDto;
+import cn.djct.stockdemo.pojo.dto.IndexEtfComparisonDto;
 import cn.djct.stockdemo.pojo.dto.IndexStyleComparisonDto;
 import cn.djct.stockdemo.pojo.dto.IndexStyleItemDto;
 import cn.djct.stockdemo.service.indexstyle.IndexStyleService;
+import cn.djct.stockdemo.service.indexstyle.IndexEtfService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -42,7 +46,11 @@ class IndexStyleControllerTest {
     @MockBean
     private IndexStyleService indexStyleService;
     @MockBean
+    private IndexEtfService indexEtfService;
+    @MockBean
     private IndexDailyQuoteMapper indexDailyQuoteMapper;
+    @MockBean
+    private IndexEtfDailyQuoteMapper indexEtfDailyQuoteMapper;
     @MockBean
     private NationalHolidayMapper nationalHolidayMapper;
     @MockBean
@@ -97,5 +105,26 @@ class IndexStyleControllerTest {
                 .andExpect(jsonPath("$.data.indices[0].dailyStyles[0].changePercent").value(1.25))
                 .andExpect(jsonPath("$.data.indices[0].dailyStyles[0].strengthType")
                         .value("STRONG"));
+    }
+
+    @Test
+    void shouldReturnIndexEtfFiveDayChanges() throws Exception {
+        LocalDate statisticsDate = LocalDate.of(2026, 9, 4);
+        when(indexEtfService.getLatest()).thenReturn(IndexEtfComparisonDto.builder()
+                .statisticsDate(statisticsDate)
+                .baseTradeDate(LocalDate.of(2026, 8, 28))
+                .etfs(List.of(IndexEtfChangeDto.builder()
+                        .etfCode("510050")
+                        .indexName("上证50")
+                        .changePercent(new BigDecimal("2.35"))
+                        .build()))
+                .build());
+
+        mockMvc.perform(get("/api/indexStyle/etfChange"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.statisticsDate").value("2026-09-04"))
+                .andExpect(jsonPath("$.data.baseTradeDate").value("2026-08-28"))
+                .andExpect(jsonPath("$.data.etfs[0].etfCode").value("510050"))
+                .andExpect(jsonPath("$.data.etfs[0].changePercent").value(2.35));
     }
 }
