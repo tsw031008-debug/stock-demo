@@ -1,16 +1,9 @@
 package cn.djct.stockdemo.controller.indexstyle;
 
 import cn.djct.stockdemo.common.Result;
-import cn.djct.stockdemo.pojo.dto.IndexDailyStyleDto;
-import cn.djct.stockdemo.pojo.dto.IndexEtfChangeDto;
-import cn.djct.stockdemo.pojo.dto.IndexEtfComparisonDto;
-import cn.djct.stockdemo.pojo.dto.IndexStyleComparisonDto;
-import cn.djct.stockdemo.pojo.dto.IndexStyleItemDto;
-import cn.djct.stockdemo.pojo.vo.IndexDailyStyleRespVo;
-import cn.djct.stockdemo.pojo.vo.IndexEtfChangeRespVo;
 import cn.djct.stockdemo.pojo.vo.IndexEtfComparisonRespVo;
+import cn.djct.stockdemo.pojo.dto.IndexStyleComparisonDto;
 import cn.djct.stockdemo.pojo.vo.IndexStyleComparisonRespVo;
-import cn.djct.stockdemo.pojo.vo.IndexStyleItemRespVo;
 import cn.djct.stockdemo.service.indexstyle.IndexStyleService;
 import cn.djct.stockdemo.service.indexstyle.IndexEtfService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -56,7 +49,7 @@ public class IndexStyleController {
     @Operation(summary = "查询四只指数ETF的5日涨幅")
     @GetMapping("/etfChange")
     public Result<IndexEtfComparisonRespVo> getEtfChange() {
-        return Result.success("操作成功", toEtfResponse(indexEtfService.getLatest()));
+        return Result.success("操作成功", indexEtfService.getLatest());
     }
 
     private IndexStyleComparisonRespVo toResponse(IndexStyleComparisonDto comparison) {
@@ -65,45 +58,8 @@ public class IndexStyleController {
                 .tradeDates(comparison.getTradeDates().stream()
                         .map(DATE_FORMATTER::format)
                         .toList())
-                .indices(comparison.getIndices().stream()
-                        .map(this::toItemResponse)
-                        .toList())
+                .indices(comparison.getIndices())
                 .build();
     }
 
-    private IndexStyleItemRespVo toItemResponse(IndexStyleItemDto item) {
-        return IndexStyleItemRespVo.builder()
-                .indexCode(item.getIndexCode())
-                .indexName(item.getIndexName())
-                .dailyStyles(item.getDailyStyles().stream()
-                        .map(this::toDailyResponse)
-                        .toList())
-                .build();
-    }
-
-    private IndexDailyStyleRespVo toDailyResponse(IndexDailyStyleDto dailyStyle) {
-        return IndexDailyStyleRespVo.builder()
-                .tradeDate(dailyStyle.getTradeDate())
-                .changePercent(dailyStyle.getChangePercent())
-                .strengthType(dailyStyle.getStrengthType())
-                .build();
-    }
-
-    private IndexEtfComparisonRespVo toEtfResponse(IndexEtfComparisonDto comparison) {
-        return IndexEtfComparisonRespVo.builder()
-                .statisticsDate(comparison.getStatisticsDate())
-                .baseTradeDate(comparison.getBaseTradeDate())
-                .etfs(comparison.getEtfs().stream()
-                        .map(this::toEtfItemResponse)
-                        .toList())
-                .build();
-    }
-
-    private IndexEtfChangeRespVo toEtfItemResponse(IndexEtfChangeDto item) {
-        return IndexEtfChangeRespVo.builder()
-                .etfCode(item.getEtfCode())
-                .indexName(item.getIndexName())
-                .changePercent(item.getChangePercent())
-                .build();
-    }
 }

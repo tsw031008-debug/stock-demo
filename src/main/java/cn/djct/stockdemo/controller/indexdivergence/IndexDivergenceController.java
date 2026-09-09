@@ -1,12 +1,7 @@
 package cn.djct.stockdemo.controller.indexdivergence;
 
 import cn.djct.stockdemo.common.Result;
-import cn.djct.stockdemo.pojo.dto.IndexDivergenceOverviewDto;
-import cn.djct.stockdemo.pojo.dto.IndexDivergenceSignalDto;
-import cn.djct.stockdemo.pojo.dto.IndexMinuteCurvePointDto;
 import cn.djct.stockdemo.pojo.vo.IndexDivergenceLatestRespVo;
-import cn.djct.stockdemo.pojo.vo.IndexDivergenceSignalRespVo;
-import cn.djct.stockdemo.pojo.vo.IndexMinuteCurvePointRespVo;
 import cn.djct.stockdemo.service.indexdivergence.IndexDivergenceQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,38 +27,7 @@ public class IndexDivergenceController {
     @Operation(summary = "查询最新上证指数曲线和背离信号")
     @GetMapping("/latest")
     public Result<IndexDivergenceLatestRespVo> getLatest() {
-        // 查询最新数据
-        IndexDivergenceOverviewDto overview = indexDivergenceQueryService.getLatest();
-        IndexDivergenceLatestRespVo response = IndexDivergenceLatestRespVo.builder()
-                .tradeDate(overview.getTradeDate())
-                .previousClosePrice(overview.getPreviousClosePrice())
-                .curveData(overview.getCurveData().stream().map(this::toCurvePoint).toList())
-                .signalData(overview.getSignalData().stream().map(this::toSignal).toList())
-                .build();
-        return Result.success("操作成功", response);
+        return Result.success("操作成功", indexDivergenceQueryService.getLatest());
     }
 
-    private IndexMinuteCurvePointRespVo toCurvePoint(IndexMinuteCurvePointDto point) {
-        return IndexMinuteCurvePointRespVo.builder()
-                .quoteTime(point.getQuoteTime())
-                .currentPrice(point.getCurrentPrice())
-                .build();
-    }
-
-    private IndexDivergenceSignalRespVo toSignal(IndexDivergenceSignalDto signal) {
-        return IndexDivergenceSignalRespVo.builder()
-                .signalType(signal.getSignalType())
-                .signalTime(signal.getSignalTime())
-                .previousIntervalStartTime(signal.getPreviousIntervalStartTime())
-                .previousIntervalEndTime(signal.getPreviousIntervalEndTime())
-                .currentIntervalStartTime(signal.getCurrentIntervalStartTime())
-                .currentIntervalEndTime(signal.getCurrentIntervalEndTime())
-                .previousPriceExtreme(signal.getPreviousPriceExtreme())
-                .currentPriceExtreme(signal.getCurrentPriceExtreme())
-                .previousMacdExtreme(signal.getPreviousMacdExtreme())
-                .currentMacdExtreme(signal.getCurrentMacdExtreme())
-                .previousDifExtreme(signal.getPreviousDifExtreme())
-                .currentDifExtreme(signal.getCurrentDifExtreme())
-                .build();
-    }
 }

@@ -1,7 +1,7 @@
 package cn.djct.stockdemo.service.plate.impl;
 
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.StockCategoryTurnoverComparisonDto;
+import cn.djct.stockdemo.pojo.vo.StockCategoryTurnoverComparisonRespVo;
 import cn.djct.stockdemo.pojo.dto.StockCustomPlateMemberRelationDto;
 import cn.djct.stockdemo.pojo.dto.StockTurnoverByDateDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
@@ -91,7 +91,7 @@ class StockCategoryTurnoverComparisonServiceImplTest {
                 STOCK_CODES
         )).thenReturn(previousTurnovers());
 
-        StockCategoryTurnoverComparisonDto result = service.getCurrent();
+        StockCategoryTurnoverComparisonRespVo result = service.getCurrent();
 
         assertEquals(CURRENT_DATE, result.getStatisticsDate());
         assertEquals(PREVIOUS_DATE, result.getPreviousTradeDate());

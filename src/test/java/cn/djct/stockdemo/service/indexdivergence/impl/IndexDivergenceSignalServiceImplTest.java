@@ -5,7 +5,7 @@ import cn.djct.stockdemo.common.IndexMacdCalculator;
 import cn.djct.stockdemo.constant.IndexDivergenceSignalType;
 import cn.djct.stockdemo.mapper.IndexDivergenceSignalMapper;
 import cn.djct.stockdemo.mapper.IndexMinuteQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.IndexDivergenceSignalDto;
+import cn.djct.stockdemo.pojo.vo.IndexDivergenceSignalRespVo;
 import cn.djct.stockdemo.pojo.dto.IndexMacdDto;
 import cn.djct.stockdemo.pojo.entity.IndexDivergenceSignal;
 import cn.djct.stockdemo.pojo.entity.IndexMinuteQuote;
@@ -121,7 +121,7 @@ class IndexDivergenceSignalServiceImplTest {
         List<IndexMinuteQuote> quotes = completePreviousDayQuotes();
         quotes.addAll(currentDayQuotes());
         List<IndexMacdDto> macdItems = List.of(macdItem(CURRENT_MINUTE));
-        IndexDivergenceSignalDto signal = signal(CURRENT_MINUTE);
+        IndexDivergenceSignalRespVo signal = signal(CURRENT_MINUTE);
         when(tradeCalendarService.getPreviousTradingDay(TRADE_DATE, 1))
                 .thenReturn(PREVIOUS_TRADE_DATE);
         when(indexMinuteQuoteMapper.selectByIndexCodeAndQuoteTimeRange(
@@ -254,8 +254,8 @@ class IndexDivergenceSignalServiceImplTest {
                 .build();
     }
 
-    private IndexDivergenceSignalDto signal(LocalDateTime signalTime) {
-        return IndexDivergenceSignalDto.builder()
+    private IndexDivergenceSignalRespVo signal(LocalDateTime signalTime) {
+        return IndexDivergenceSignalRespVo.builder()
                 .signalType(IndexDivergenceSignalType.MACD_BOTTOM)
                 .signalTime(signalTime)
                 .previousIntervalStartTime(signalTime.minusMinutes(20))

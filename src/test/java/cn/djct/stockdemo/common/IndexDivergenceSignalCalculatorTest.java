@@ -1,7 +1,7 @@
 package cn.djct.stockdemo.common;
 
 import cn.djct.stockdemo.constant.IndexDivergenceSignalType;
-import cn.djct.stockdemo.pojo.dto.IndexDivergenceSignalDto;
+import cn.djct.stockdemo.pojo.vo.IndexDivergenceSignalRespVo;
 import cn.djct.stockdemo.pojo.dto.IndexMacdDto;
 import org.junit.jupiter.api.Test;
 
@@ -34,10 +34,10 @@ class IndexDivergenceSignalCalculatorTest {
                 item(10, "97", "1", "2")
         );
 
-        List<IndexDivergenceSignalDto> signals = calculator.detect(macdItems);
+        List<IndexDivergenceSignalRespVo> signals = calculator.detect(macdItems);
 
         assertEquals(1, signals.size());
-        IndexDivergenceSignalDto signal = signals.get(0);
+        IndexDivergenceSignalRespVo signal = signals.get(0);
         assertEquals(IndexDivergenceSignalType.MACD_BOTTOM, signal.getSignalType());
         assertEquals(FIRST_MINUTE.plusMinutes(10), signal.getSignalTime());
         assertEquals(new BigDecimal("98"), signal.getPreviousPriceExtreme());
@@ -64,10 +64,10 @@ class IndexDivergenceSignalCalculatorTest {
                 item(10, "109", "-1", "-2")
         );
 
-        List<IndexDivergenceSignalDto> signals = calculator.detect(macdItems);
+        List<IndexDivergenceSignalRespVo> signals = calculator.detect(macdItems);
 
         assertEquals(1, signals.size());
-        IndexDivergenceSignalDto signal = signals.get(0);
+        IndexDivergenceSignalRespVo signal = signals.get(0);
         assertEquals(IndexDivergenceSignalType.MACD_TOP, signal.getSignalType());
         assertEquals(FIRST_MINUTE.plusMinutes(10), signal.getSignalTime());
         assertEquals(new BigDecimal("110"), signal.getPreviousPriceExtreme());

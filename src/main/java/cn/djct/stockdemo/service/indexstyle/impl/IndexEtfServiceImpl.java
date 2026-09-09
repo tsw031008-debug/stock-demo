@@ -3,7 +3,7 @@ package cn.djct.stockdemo.service.indexstyle.impl;
 import cn.djct.stockdemo.common.IndexEtfChangeCalculator;
 import cn.djct.stockdemo.constant.IndexEtf;
 import cn.djct.stockdemo.mapper.IndexEtfDailyQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.IndexEtfComparisonDto;
+import cn.djct.stockdemo.pojo.vo.IndexEtfComparisonRespVo;
 import cn.djct.stockdemo.pojo.entity.IndexEtfDailyQuote;
 import cn.djct.stockdemo.service.indexstyle.IndexEtfService;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
@@ -31,7 +31,7 @@ public class IndexEtfServiceImpl implements IndexEtfService {
      * 使用最新完整日行情计算四只固定ETF的5日涨幅。
      */
     @Override
-    public IndexEtfComparisonDto getLatest() {
+    public IndexEtfComparisonRespVo getLatest() {
         List<String> etfCodes = Arrays.stream(IndexEtf.values())
                 .map(IndexEtf::getEtfCode)
                 .toList();
@@ -49,7 +49,7 @@ public class IndexEtfServiceImpl implements IndexEtfService {
                 List.of(baseTradeDate, statisticsDate),
                 etfCodes
         );
-        return IndexEtfComparisonDto.builder()
+        return IndexEtfComparisonRespVo.builder()
                 .statisticsDate(statisticsDate)
                 .baseTradeDate(baseTradeDate)
                 .etfs(indexEtfChangeCalculator.calculate(

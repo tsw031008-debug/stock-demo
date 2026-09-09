@@ -1,5 +1,7 @@
 package cn.djct.stockdemo.pojo.dto;
 
+import cn.djct.stockdemo.pojo.vo.IndexStyleItemRespVo;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,5 +21,5 @@ public class IndexStyleComparisonDto {
 
     private LocalDate statisticsDate;
     private List<LocalDate> tradeDates;
-    private List<IndexStyleItemDto> indices;
+    private List<IndexStyleItemRespVo> indices;
 }

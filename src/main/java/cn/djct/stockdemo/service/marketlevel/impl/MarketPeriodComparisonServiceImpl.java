@@ -1,8 +1,8 @@
 package cn.djct.stockdemo.service.marketlevel.impl;
 
 import cn.djct.stockdemo.mapper.MarketDailyTurnoverMapper;
-import cn.djct.stockdemo.pojo.dto.MarketPeriodComparisonDto;
-import cn.djct.stockdemo.pojo.dto.MarketPeriodItemDto;
+import cn.djct.stockdemo.pojo.vo.MarketPeriodComparisonRespVo;
+import cn.djct.stockdemo.pojo.vo.MarketPeriodItemRespVo;
 import cn.djct.stockdemo.pojo.entity.MarketDailyTurnover;
 import cn.djct.stockdemo.service.marketlevel.MarketPeriodComparisonService;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
@@ -39,7 +39,7 @@ public class MarketPeriodComparisonServiceImpl implements MarketPeriodComparison
      * @return 周、月同比、环比和当前周期的日均成交额
      */
     @Override
-    public MarketPeriodComparisonDto getLatest() {
+    public MarketPeriodComparisonRespVo getLatest() {
         // 以每日汇总表中最新的COMPLETE记录作为统计截止日，避免使用未收盘或残缺数据
         LocalDate statisticsDate = marketDailyTurnoverMapper.selectLatestCompleteTradeDate();
         if (statisticsDate == null) {
@@ -66,7 +66,7 @@ public class MarketPeriodComparisonServiceImpl implements MarketPeriodComparison
         PeriodData monthlyCurrent = loadPeriod(currentMonth.atDay(1), statisticsDate);
 
         // 图表展示顺序固定为同比、环比、当前，周和月保持一致
-        return MarketPeriodComparisonDto.builder()
+        return MarketPeriodComparisonRespVo.builder()
                 .statisticsTradeDate(statisticsDate)
                 .weekly(List.of(
                         toItem("YOY", weeklyYoy, false),
@@ -140,10 +140,10 @@ public class MarketPeriodComparisonServiceImpl implements MarketPeriodComparison
      * @param monthly        是否为月周期
      * @return 周期平均水位
      */
-    private MarketPeriodItemDto toItem(String comparisonType, PeriodData period, boolean monthly) {
+    private MarketPeriodItemRespVo toItem(String comparisonType, PeriodData period, boolean monthly) {
         // 整个自然周期没有交易日时显式返回不可用，不用0伪装成真实水位
         if (period.tradingDays().isEmpty()) {
-            return MarketPeriodItemDto.builder()
+            return MarketPeriodItemRespVo.builder()
                     .comparisonType(comparisonType)
                     .periodLabel(formatLabel(period, monthly))
                     .startDate(period.startDate())
@@ -159,7 +159,7 @@ public class MarketPeriodComparisonServiceImpl implements MarketPeriodComparison
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         LocalDate actualStart = period.tradingDays().get(0);
         LocalDate actualEnd = period.tradingDays().get(period.tradingDays().size() - 1);
-        return MarketPeriodItemDto.builder()
+        return MarketPeriodItemRespVo.builder()
                 .comparisonType(comparisonType)
                 //返回前端对应的坐标标签
                 .periodLabel(formatLabel(period, monthly))

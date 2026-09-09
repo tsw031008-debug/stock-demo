@@ -1,7 +1,7 @@
 package cn.djct.stockdemo.common;
 
 import cn.djct.stockdemo.pojo.dto.StockClosePriceDto;
-import cn.djct.stockdemo.pojo.dto.StockOpenBoardAlertDto;
+import cn.djct.stockdemo.pojo.vo.StockOpenBoardAlertRespVo;
 import cn.djct.stockdemo.pojo.dto.StockSpeedAlertDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import org.junit.jupiter.api.Test;
@@ -100,10 +100,10 @@ class StockAlertCalculatorTest {
                 createQuote("000006", "零成交", "8", "10", 0L, "0")
         );
 
-        List<StockOpenBoardAlertDto> result = calculator.calculateOpenBoardAlerts(quotes);
+        List<StockOpenBoardAlertRespVo> result = calculator.calculateOpenBoardAlerts(quotes);
 
         assertEquals(List.of("000002", "000001"), result.stream()
-                .map(StockOpenBoardAlertDto::getStockCode)
+                .map(StockOpenBoardAlertRespVo::getStockCode)
                 .toList());
         assertEquals(new BigDecimal("10.13"), result.get(1).getCurrentPrice());
         assertEquals(new BigDecimal("2.50"), result.get(1).getTurnoverYi());

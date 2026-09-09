@@ -3,7 +3,7 @@ package cn.djct.stockdemo.service.indexstyle.impl;
 import cn.djct.stockdemo.common.IndexEtfChangeCalculator;
 import cn.djct.stockdemo.constant.IndexEtf;
 import cn.djct.stockdemo.mapper.IndexEtfDailyQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.IndexEtfComparisonDto;
+import cn.djct.stockdemo.pojo.vo.IndexEtfComparisonRespVo;
 import cn.djct.stockdemo.pojo.entity.IndexEtfDailyQuote;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
 import org.junit.jupiter.api.Test;
@@ -56,7 +56,7 @@ class IndexEtfServiceImplTest {
         when(indexEtfChangeCalculator.calculate(baseTradeDate, statisticsDate, quotes))
                 .thenReturn(List.of());
 
-        IndexEtfComparisonDto result = indexEtfService.getLatest();
+        IndexEtfComparisonRespVo result = indexEtfService.getLatest();
 
         assertEquals(statisticsDate, result.getStatisticsDate());
         assertEquals(baseTradeDate, result.getBaseTradeDate());

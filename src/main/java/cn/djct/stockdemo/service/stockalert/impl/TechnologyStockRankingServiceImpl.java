@@ -3,7 +3,7 @@ package cn.djct.stockdemo.service.stockalert.impl;
 import cn.djct.stockdemo.common.TechnologyStockRankingCalculator;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
 import cn.djct.stockdemo.pojo.dto.TechnologyStockQuoteDto;
-import cn.djct.stockdemo.pojo.dto.TechnologyStockRankingDto;
+import cn.djct.stockdemo.pojo.vo.TechnologyStockRankingRespVo;
 import cn.djct.stockdemo.service.stockalert.TechnologyStockPoolSourceService;
 import cn.djct.stockdemo.service.stockalert.TechnologyStockRankingService;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
@@ -29,7 +29,7 @@ public class TechnologyStockRankingServiceImpl implements TechnologyStockRanking
      * 使用日行情表最新交易日查询热门和潜力科技股前五名。
      */
     @Override
-    public TechnologyStockRankingDto getLatest() {
+    public TechnologyStockRankingRespVo getLatest() {
         // 获取日行情表最新交易日
         LocalDate statisticsDate = stockDailyQuoteMapper.selectLatestTradeDate();
         if (statisticsDate == null) {

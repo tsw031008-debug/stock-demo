@@ -3,10 +3,10 @@ package cn.djct.stockdemo.service.plate.impl;
 import cn.djct.stockdemo.constant.StockCustomCategory;
 import cn.djct.stockdemo.mapper.StockBasicMapper;
 import cn.djct.stockdemo.mapper.StockCustomPlateMapper;
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockCustomCategoryDto;
-import cn.djct.stockdemo.pojo.dto.StockCustomPlateDto;
-import cn.djct.stockdemo.pojo.dto.StockCustomPlateMemberDto;
+import cn.djct.stockdemo.pojo.vo.PageRespVo;
+import cn.djct.stockdemo.pojo.vo.StockCustomCategoryRespVo;
+import cn.djct.stockdemo.pojo.vo.StockCustomPlateRespVo;
+import cn.djct.stockdemo.pojo.vo.StockCustomPlateMemberRespVo;
 import cn.djct.stockdemo.pojo.dto.StockCustomPlateMemberRelationDto;
 import cn.djct.stockdemo.pojo.dto.StockCustomPlateSaveDto;
 import cn.djct.stockdemo.pojo.entity.StockBasic;
@@ -43,9 +43,9 @@ public class StockCustomPlateServiceImpl implements StockCustomPlateService {
      * @return 固定顺序的四大类
      */
     @Override
-    public List<StockCustomCategoryDto> findCategories() {
+    public List<StockCustomCategoryRespVo> findCategories() {
         return Arrays.stream(StockCustomCategory.values())
-                .map(category -> StockCustomCategoryDto.builder()
+                .map(category -> StockCustomCategoryRespVo.builder()
                         .categoryCode(category.name())
                         .categoryName(category.getDisplayName())
                         .build())
@@ -61,19 +61,19 @@ public class StockCustomPlateServiceImpl implements StockCustomPlateService {
      * @return 有效子板块分页数据
      */
     @Override
-    public PageDto<StockCustomPlateDto> findPlates(String categoryCode, int pageNum, int pageSize) {
+    public PageRespVo<StockCustomPlateRespVo> findPlates(String categoryCode, int pageNum, int pageSize) {
         // 校验四大板块代码
         StockCustomCategory category = StockCustomCategory.fromCode(categoryCode);
         validatePage(pageNum, pageSize);
         // 查询有效子板块数量
         int total = stockCustomPlateMapper.countActiveByCategory(category.name());
         int offset = (pageNum - 1) * pageSize;
-        List<StockCustomPlateDto> records = stockCustomPlateMapper
+        List<StockCustomPlateRespVo> records = stockCustomPlateMapper
                 .selectActiveByCategory(category.name(), offset, pageSize)
                 .stream()
                 .map(this::toDto)
                 .toList();
-        return PageDto.<StockCustomPlateDto>builder()
+        return PageRespVo.<StockCustomPlateRespVo>builder()
                 .pageNum(pageNum)
                 .pageSize(pageSize)
                 .total(total)
@@ -90,7 +90,7 @@ public class StockCustomPlateServiceImpl implements StockCustomPlateService {
      * @return 成分股分页数据
      */
     @Override
-    public PageDto<StockCustomPlateMemberDto> findMembers(Long plateId, int pageNum, int pageSize) {
+    public PageRespVo<StockCustomPlateMemberRespVo> findMembers(Long plateId, int pageNum, int pageSize) {
         // 校验子板块存在且未被软删除
         requireActivePlate(plateId);
         // 校验页码和页大小
@@ -98,7 +98,7 @@ public class StockCustomPlateServiceImpl implements StockCustomPlateService {
         // 查询有效成分股数量
         int total = stockCustomPlateMapper.countActiveMembers(plateId);
         int offset = (pageNum - 1) * pageSize;
-        return PageDto.<StockCustomPlateMemberDto>builder()
+        return PageRespVo.<StockCustomPlateMemberRespVo>builder()
                 .pageNum(pageNum)
                 .pageSize(pageSize)
                 .total(total)
@@ -114,7 +114,7 @@ public class StockCustomPlateServiceImpl implements StockCustomPlateService {
      */
     @Override
     @Transactional
-    public StockCustomPlateDto create(StockCustomPlateSaveDto request) {
+    public StockCustomPlateRespVo create(StockCustomPlateSaveDto request) {
         //校验四大板块代码
         StockCustomCategory category = StockCustomCategory.fromCode(request.getCategoryCode());
         //校验股票代码
@@ -144,7 +144,7 @@ public class StockCustomPlateServiceImpl implements StockCustomPlateService {
      */
     @Override
     @Transactional
-    public StockCustomPlateDto update(
+    public StockCustomPlateRespVo update(
             Long plateId,
             StockCustomPlateSaveDto request
     ) {
@@ -298,10 +298,10 @@ public class StockCustomPlateServiceImpl implements StockCustomPlateService {
         }
     }
 
-    private StockCustomPlateDto toDto(StockCustomPlate plate) {
+    private StockCustomPlateRespVo toDto(StockCustomPlate plate) {
         //获取板块类别
         StockCustomCategory category = StockCustomCategory.fromCode(plate.getCategoryCode());
-        return StockCustomPlateDto.builder()
+        return StockCustomPlateRespVo.builder()
                 .id(plate.getId())
                 .categoryCode(category.name())
                 .categoryName(category.getDisplayName())

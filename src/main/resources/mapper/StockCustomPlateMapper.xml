@@ -89,7 +89,7 @@
 
     <!--分页查询子板块成分股，并从最新基础信息快照补充名称。-->
     <select id="selectActiveMembers"
-            resultType="cn.djct.stockdemo.pojo.dto.StockCustomPlateMemberDto">
+            resultType="cn.djct.stockdemo.pojo.vo.StockCustomPlateMemberRespVo">
         SELECT member.stock_code, basic.stock_name
         FROM stock_custom_plate_member member
         LEFT JOIN stock_basic basic

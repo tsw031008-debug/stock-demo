@@ -1,8 +1,8 @@
 package cn.djct.stockdemo.service.stockfundflow.impl;
 
 import cn.djct.stockdemo.mapper.StockFundFlowMapper;
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockFundFlowDto;
+import cn.djct.stockdemo.pojo.vo.PageRespVo;
+import cn.djct.stockdemo.pojo.vo.StockFundFlowRespVo;
 import cn.djct.stockdemo.pojo.entity.StockFundFlow;
 import cn.djct.stockdemo.service.stockfundflow.StockFundFlowService;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
@@ -37,7 +37,7 @@ public class StockFundFlowServiceImpl implements StockFundFlowService {
      * @return 资金流向分页数据
      */
     @Override
-    public PageDto<StockFundFlowDto> findByTradeDate(
+    public PageRespVo<StockFundFlowRespVo> findByTradeDate(
             LocalDate tradeDate,
             int pageNum,
             int pageSize
@@ -55,10 +55,10 @@ public class StockFundFlowServiceImpl implements StockFundFlowService {
         int total = stockFundFlowMapper.countByTradeDate(tradeDate);
         long offset = (long) (pageNum - 1) * pageSize;
         // 无数据或页码超出范围时不执行无意义的分页查询
-        List<StockFundFlowDto> records = total == 0 || offset >= total
+        List<StockFundFlowRespVo> records = total == 0 || offset >= total
                 ? List.of()
                 : stockFundFlowMapper.selectPageByTradeDate(tradeDate, offset, pageSize);
-        return PageDto.<StockFundFlowDto>builder()
+        return PageRespVo.<StockFundFlowRespVo>builder()
                 .pageNum(pageNum)
                 .pageSize(pageSize)
                 .total(total)

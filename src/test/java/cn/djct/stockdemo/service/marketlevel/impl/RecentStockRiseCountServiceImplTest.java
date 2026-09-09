@@ -2,7 +2,7 @@ package cn.djct.stockdemo.service.marketlevel.impl;
 
 import cn.djct.stockdemo.common.RecentStockRiseCountCalculator;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.RecentStockRiseCountDto;
+import cn.djct.stockdemo.pojo.vo.RecentStockRiseCountRespVo;
 import cn.djct.stockdemo.pojo.dto.StockClosePriceDto;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
 import org.junit.jupiter.api.Test;
@@ -38,8 +38,8 @@ class RecentStockRiseCountServiceImplTest {
         LocalDate startDate = tradingDates.get(0);
         LocalDate statisticsDate = tradingDates.get(19);
         List<StockClosePriceDto> closePrices = completeTargetQuotes(tradingDates);
-        List<RecentStockRiseCountDto> expected = List.of(
-                RecentStockRiseCountDto.builder()
+        List<RecentStockRiseCountRespVo> expected = List.of(
+                RecentStockRiseCountRespVo.builder()
                         .tradeDate(statisticsDate)
                         .fiveDayRiseCount(100)
                         .tenDayRiseCount(200)
@@ -55,7 +55,7 @@ class RecentStockRiseCountServiceImplTest {
                 .thenReturn(closePrices);
         when(calculator.calculate(tradingDates, closePrices)).thenReturn(expected);
 
-        List<RecentStockRiseCountDto> result = service.getLatest();
+        List<RecentStockRiseCountRespVo> result = service.getLatest();
 
         assertEquals(expected, result);
         verify(stockDailyQuoteMapper).selectClosePricesByTradeDates(tradingDates);

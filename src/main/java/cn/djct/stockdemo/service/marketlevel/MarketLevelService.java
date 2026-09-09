@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.service.marketlevel;
 
-import cn.djct.stockdemo.pojo.dto.MarketLevelDto;
+import cn.djct.stockdemo.pojo.vo.MarketLevelRespVo;
 
 /**
  * 市场水位服务。
@@ -12,5 +12,5 @@ public interface MarketLevelService {
      *
      * @return 最新市场水位
      */
-    MarketLevelDto getLatest();
+    MarketLevelRespVo getLatest();
 }

@@ -1,7 +1,7 @@
 package cn.djct.stockdemo.common;
 
 import cn.djct.stockdemo.constant.IndexEtf;
-import cn.djct.stockdemo.pojo.dto.IndexEtfChangeDto;
+import cn.djct.stockdemo.pojo.vo.IndexEtfChangeRespVo;
 import cn.djct.stockdemo.pojo.entity.IndexEtfDailyQuote;
 import org.springframework.stereotype.Component;
 
@@ -29,7 +29,7 @@ public class IndexEtfChangeCalculator {
      * @param quotes 两个交易日的四只固定ETF日行情
      * @return 按产品固定顺序排列的ETF涨幅
      */
-    public List<IndexEtfChangeDto> calculate(
+    public List<IndexEtfChangeRespVo> calculate(
             LocalDate baseTradeDate,
             LocalDate statisticsDate,
             List<IndexEtfDailyQuote> quotes
@@ -50,7 +50,7 @@ public class IndexEtfChangeCalculator {
             }
         }
 
-        List<IndexEtfChangeDto> result = new ArrayList<>(IndexEtf.values().length);
+        List<IndexEtfChangeRespVo> result = new ArrayList<>(IndexEtf.values().length);
         for (IndexEtf etf : IndexEtf.values()) {
             // 查询指数ETF的基准日和统计日价格完整日行情。
             BigDecimal basePrice = requiredPrice(quoteByKey, baseTradeDate, etf);
@@ -61,7 +61,7 @@ public class IndexEtfChangeCalculator {
                     .subtract(BigDecimal.ONE)
                     .multiply(ONE_HUNDRED)
                     .setScale(2, RoundingMode.HALF_UP);
-            result.add(IndexEtfChangeDto.builder()
+            result.add(IndexEtfChangeRespVo.builder()
                     .etfCode(etf.getEtfCode())
                     .indexName(etf.getIndexName())
                     .changePercent(changePercent)

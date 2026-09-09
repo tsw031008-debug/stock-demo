@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.mapper;
 
-import cn.djct.stockdemo.pojo.dto.StockFundFlowDto;
+import cn.djct.stockdemo.pojo.vo.StockFundFlowRespVo;
 import cn.djct.stockdemo.pojo.entity.StockFundFlow;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -30,7 +30,7 @@ public interface StockFundFlowMapper {
      * @param limit     返回数量
      * @return 资金流向记录
      */
-    List<StockFundFlowDto> selectPageByTradeDate(
+    List<StockFundFlowRespVo> selectPageByTradeDate(
             @Param("tradeDate") LocalDate tradeDate,
             @Param("offset") long offset,
             @Param("limit") int limit

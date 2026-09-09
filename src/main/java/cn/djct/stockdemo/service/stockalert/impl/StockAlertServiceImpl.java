@@ -2,9 +2,9 @@ package cn.djct.stockdemo.service.stockalert.impl;
 
 import cn.djct.stockdemo.common.StockAlertCalculator;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.PageDto;
+import cn.djct.stockdemo.pojo.vo.PageRespVo;
 import cn.djct.stockdemo.pojo.dto.StockClosePriceDto;
-import cn.djct.stockdemo.pojo.dto.StockOpenBoardAlertDto;
+import cn.djct.stockdemo.pojo.vo.StockOpenBoardAlertRespVo;
 import cn.djct.stockdemo.pojo.dto.StockSpeedAlertDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.service.stockalert.StockAlertService;
@@ -81,7 +81,7 @@ public class StockAlertServiceImpl implements StockAlertService {
      * 查询并计算涨速预警股票。
      */
     @Override
-    public PageDto<StockSpeedAlertDto> findSpeedAlerts(int pageNum, int pageSize) {
+    public PageRespVo<StockSpeedAlertDto> findSpeedAlerts(int pageNum, int pageSize) {
         // 校验分页参数和当前是否允许查询
         validatePage(pageNum, pageSize);
         LocalDate currentDate = validateQueryTime();
@@ -108,12 +108,12 @@ public class StockAlertServiceImpl implements StockAlertService {
      * 查询并计算开板提醒股票。
      */
     @Override
-    public PageDto<StockOpenBoardAlertDto> findOpenBoardAlerts(int pageNum, int pageSize) {
+    public PageRespVo<StockOpenBoardAlertRespVo> findOpenBoardAlerts(int pageNum, int pageSize) {
         // 校验分页参数和当前是否允许查询
         validatePage(pageNum, pageSize);
         LocalDate currentDate = validateQueryTime();
         // 复用实时快照并完成全量筛选和排序
-        List<StockOpenBoardAlertDto> alerts = stockAlertCalculator.calculateOpenBoardAlerts(
+        List<StockOpenBoardAlertRespVo> alerts = stockAlertCalculator.calculateOpenBoardAlerts(
                 stockQuoteSnapshotService.getSnapshot(currentDate)
         );
         return paginate(alerts, pageNum, pageSize);
@@ -155,7 +155,7 @@ public class StockAlertServiceImpl implements StockAlertService {
     /**
      * 对已完成全量筛选和排序的数据进行分页。
      */
-    private <T> PageDto<T> paginate(List<T> records, int pageNum, int pageSize) {
+    private <T> PageRespVo<T> paginate(List<T> records, int pageNum, int pageSize) {
         // 根据页码计算全量结果中的起始位置
         long start = (long) (pageNum - 1) * pageSize;
         List<T> pageRecords;
@@ -167,7 +167,7 @@ public class StockAlertServiceImpl implements StockAlertService {
             pageRecords = records.subList((int) start, end);
         }
         // 封装业务分页数据
-        return PageDto.<T>builder()
+        return PageRespVo.<T>builder()
                 .pageNum(pageNum)
                 .pageSize(pageSize)
                 .total(records.size())

@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.service.plate;
 
-import cn.djct.stockdemo.pojo.dto.StockCategoryTurnoverComparisonDto;
+import cn.djct.stockdemo.pojo.vo.StockCategoryTurnoverComparisonRespVo;
 
 /**
  * 四大类当前与上一交易日成交额对比服务。
@@ -15,5 +15,5 @@ public interface StockCategoryTurnoverComparisonService {
      *
      * @return 四大类两个交易日的成交额对比
      */
-    StockCategoryTurnoverComparisonDto getCurrent();
+    StockCategoryTurnoverComparisonRespVo getCurrent();
 }

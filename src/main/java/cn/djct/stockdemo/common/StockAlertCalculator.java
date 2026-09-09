@@ -1,7 +1,7 @@
 package cn.djct.stockdemo.common;
 
 import cn.djct.stockdemo.pojo.dto.StockClosePriceDto;
-import cn.djct.stockdemo.pojo.dto.StockOpenBoardAlertDto;
+import cn.djct.stockdemo.pojo.vo.StockOpenBoardAlertRespVo;
 import cn.djct.stockdemo.pojo.dto.StockSpeedAlertDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import org.springframework.stereotype.Component;
@@ -72,13 +72,13 @@ public class StockAlertCalculator {
      * @param currentQuotes 当前实时行情
      * @return 按当前涨幅倒序排列的开板提醒
      */
-    public List<StockOpenBoardAlertDto> calculateOpenBoardAlerts(List<StockDailyQuote> currentQuotes) {
+    public List<StockOpenBoardAlertRespVo> calculateOpenBoardAlerts(List<StockDailyQuote> currentQuotes) {
         // 校验实时行情不能为空
         Objects.requireNonNull(currentQuotes, "当前实时行情不能为空");
         // 按开板条件筛选，转换成交额单位并按业务规则排序
         return currentQuotes.stream()
                 .filter(this::isLimitUpCandidate)
-                .map(quote -> StockOpenBoardAlertDto.builder()
+                .map(quote -> StockOpenBoardAlertRespVo.builder()
                         .stockCode(quote.getStockCode())
                         .stockName(quote.getStockName())
                         .currentPrice(toResponseScale(quote.getClosePrice()))
@@ -87,14 +87,14 @@ public class StockAlertCalculator {
                                 .divide(ONE_HUNDRED_MILLION, RESPONSE_SCALE, RoundingMode.HALF_UP))
                         .build())
                 .sorted(Comparator.comparing(
-                                StockOpenBoardAlertDto::getCurrentChangePercent,
+                                StockOpenBoardAlertRespVo::getCurrentChangePercent,
                                 Comparator.reverseOrder()
                         )
                         .thenComparing(
-                                StockOpenBoardAlertDto::getTurnoverYi,
+                                StockOpenBoardAlertRespVo::getTurnoverYi,
                                 Comparator.reverseOrder()
                         )
-                        .thenComparing(StockOpenBoardAlertDto::getStockCode))
+                        .thenComparing(StockOpenBoardAlertRespVo::getStockCode))
                 .toList();
     }
 

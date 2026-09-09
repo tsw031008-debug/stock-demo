@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.common;
 
-import cn.djct.stockdemo.pojo.dto.StockPlateLimitUpDto;
+import cn.djct.stockdemo.pojo.vo.StockPlateLimitUpRespVo;
 import cn.djct.stockdemo.pojo.dto.StockPlateMemberDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.pojo.entity.StockPlateDailyQuote;
@@ -62,15 +62,15 @@ class StockPlateCalculatorTest {
 
     @Test
     void shouldCalculateLimitUpCountRatioAndSort() {
-        List<StockPlateLimitUpDto> result = calculator.calculateLimitUpStatistics(
+        List<StockPlateLimitUpRespVo> result = calculator.calculateLimitUpStatistics(
                 members(),
                 quotes()
         );
 
         assertEquals(List.of("科技-概", "金融-概"), result.stream()
-                .map(StockPlateLimitUpDto::getPlateName)
+                .map(StockPlateLimitUpRespVo::getPlateName)
                 .toList());
-        StockPlateLimitUpDto technology = result.get(0);
+        StockPlateLimitUpRespVo technology = result.get(0);
         assertEquals(2, technology.getTotalStockCount());
         assertEquals(new BigDecimal("5.00"), technology.getPlateChangePercent());
         assertEquals(1, technology.getLimitUpStockCount());

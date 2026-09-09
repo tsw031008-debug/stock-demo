@@ -1,7 +1,7 @@
 package cn.djct.stockdemo.common;
 
 import cn.djct.stockdemo.constant.IndexEtf;
-import cn.djct.stockdemo.pojo.dto.IndexEtfChangeDto;
+import cn.djct.stockdemo.pojo.vo.IndexEtfChangeRespVo;
 import cn.djct.stockdemo.pojo.entity.IndexEtfDailyQuote;
 import org.junit.jupiter.api.Test;
 
@@ -29,14 +29,14 @@ class IndexEtfChangeCalculatorTest {
             quotes.add(quote(etf, STATISTICS_DATE, String.valueOf(102 + index)));
         }
 
-        List<IndexEtfChangeDto> result = calculator.calculate(
+        List<IndexEtfChangeRespVo> result = calculator.calculate(
                 BASE_DATE,
                 STATISTICS_DATE,
                 quotes
         );
 
         assertEquals(List.of("510050", "510300", "159949", "512100"),
-                result.stream().map(IndexEtfChangeDto::getEtfCode).toList());
+                result.stream().map(IndexEtfChangeRespVo::getEtfCode).toList());
         assertEquals(new BigDecimal("2.00"), result.get(0).getChangePercent());
         assertEquals(new BigDecimal("5.00"), result.get(3).getChangePercent());
     }

@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.mapper;
 
-import cn.djct.stockdemo.pojo.dto.StockCustomPlateMemberDto;
+import cn.djct.stockdemo.pojo.vo.StockCustomPlateMemberRespVo;
 import cn.djct.stockdemo.pojo.dto.StockCustomPlateMemberRelationDto;
 import cn.djct.stockdemo.pojo.entity.StockCustomPlate;
 import cn.djct.stockdemo.pojo.entity.StockCustomPlateMember;
@@ -99,7 +99,7 @@ public interface StockCustomPlateMapper {
      * @param limit 本次最多返回数量
      * @return 成分股代码及名称
      */
-    List<StockCustomPlateMemberDto> selectActiveMembers(
+    List<StockCustomPlateMemberRespVo> selectActiveMembers(
             @Param("customPlateId") Long customPlateId,
             @Param("offset") int offset,
             @Param("limit") int limit

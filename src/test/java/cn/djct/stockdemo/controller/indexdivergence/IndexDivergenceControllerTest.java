@@ -14,9 +14,9 @@ import cn.djct.stockdemo.mapper.StockFundFlowMapper;
 import cn.djct.stockdemo.mapper.StockPlateDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.StockPlateMapper;
 import cn.djct.stockdemo.mapper.TradeCalendarMapper;
-import cn.djct.stockdemo.pojo.dto.IndexDivergenceOverviewDto;
-import cn.djct.stockdemo.pojo.dto.IndexDivergenceSignalDto;
-import cn.djct.stockdemo.pojo.dto.IndexMinuteCurvePointDto;
+import cn.djct.stockdemo.pojo.vo.IndexDivergenceLatestRespVo;
+import cn.djct.stockdemo.pojo.vo.IndexDivergenceSignalRespVo;
+import cn.djct.stockdemo.pojo.vo.IndexMinuteCurvePointRespVo;
 import cn.djct.stockdemo.service.indexdivergence.IndexDivergenceQueryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,14 +80,14 @@ class IndexDivergenceControllerTest {
         LocalDate tradeDate = LocalDate.of(2026, 8, 28);
         LocalDateTime quoteTime = LocalDateTime.of(2026, 8, 28, 9, 31);
         when(indexDivergenceQueryService.getLatest()).thenReturn(
-                IndexDivergenceOverviewDto.builder()
+                IndexDivergenceLatestRespVo.builder()
                         .tradeDate(tradeDate)
                         .previousClosePrice(new BigDecimal("3820.10"))
-                        .curveData(List.of(IndexMinuteCurvePointDto.builder()
+                        .curveData(List.of(IndexMinuteCurvePointRespVo.builder()
                                 .quoteTime(quoteTime)
                                 .currentPrice(new BigDecimal("3850.12"))
                                 .build()))
-                        .signalData(List.of(IndexDivergenceSignalDto.builder()
+                        .signalData(List.of(IndexDivergenceSignalRespVo.builder()
                                 .signalType(IndexDivergenceSignalType.MACD_BOTTOM)
                                 .signalTime(quoteTime.plusMinutes(20))
                                 .build()))
@@ -102,6 +102,7 @@ class IndexDivergenceControllerTest {
                 .andExpect(jsonPath("$.data.curveData[0].quoteTime")
                         .value("2026-08-28 09:31:00"))
                 .andExpect(jsonPath("$.data.curveData[0].currentPrice").value(3850.12))
-                .andExpect(jsonPath("$.data.signalData[0].signalType").value("MACD_BOTTOM"));
+                .andExpect(jsonPath("$.data.signalData[0].signalType").value("MACD_BOTTOM"))
+                .andExpect(jsonPath("$.data.signalData[0].signalTime").value("2026-08-28 09:51:00"));
     }
 }

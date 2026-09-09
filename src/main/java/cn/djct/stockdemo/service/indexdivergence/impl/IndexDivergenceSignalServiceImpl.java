@@ -4,7 +4,7 @@ import cn.djct.stockdemo.common.IndexDivergenceSignalCalculator;
 import cn.djct.stockdemo.common.IndexMacdCalculator;
 import cn.djct.stockdemo.mapper.IndexDivergenceSignalMapper;
 import cn.djct.stockdemo.mapper.IndexMinuteQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.IndexDivergenceSignalDto;
+import cn.djct.stockdemo.pojo.vo.IndexDivergenceSignalRespVo;
 import cn.djct.stockdemo.pojo.dto.IndexMacdDto;
 import cn.djct.stockdemo.pojo.entity.IndexDivergenceSignal;
 import cn.djct.stockdemo.pojo.entity.IndexMinuteQuote;
@@ -178,7 +178,7 @@ public class IndexDivergenceSignalServiceImpl implements IndexDivergenceSignalSe
         return morning || afternoon;
     }
 
-    private IndexDivergenceSignal toEntity(IndexDivergenceSignalDto signal) {
+    private IndexDivergenceSignal toEntity(IndexDivergenceSignalRespVo signal) {
         return IndexDivergenceSignal.builder()
                 .indexCode(SHANGHAI_COMPOSITE_CODE)
                 .signalType(signal.getSignalType())

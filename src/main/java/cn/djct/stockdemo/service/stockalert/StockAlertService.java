@@ -1,7 +1,7 @@
 package cn.djct.stockdemo.service.stockalert;
 
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockOpenBoardAlertDto;
+import cn.djct.stockdemo.pojo.vo.PageRespVo;
+import cn.djct.stockdemo.pojo.vo.StockOpenBoardAlertRespVo;
 import cn.djct.stockdemo.pojo.dto.StockSpeedAlertDto;
 
 /**
@@ -16,7 +16,7 @@ public interface StockAlertService {
      * @param pageSize 每页数量
      * @return 涨速预警分页数据
      */
-    PageDto<StockSpeedAlertDto> findSpeedAlerts(int pageNum, int pageSize);
+    PageRespVo<StockSpeedAlertDto> findSpeedAlerts(int pageNum, int pageSize);
 
     /**
      * 分页查询开板提醒股票。
@@ -25,5 +25,5 @@ public interface StockAlertService {
      * @param pageSize 每页数量
      * @return 开板提醒分页数据
      */
-    PageDto<StockOpenBoardAlertDto> findOpenBoardAlerts(int pageNum, int pageSize);
+    PageRespVo<StockOpenBoardAlertRespVo> findOpenBoardAlerts(int pageNum, int pageSize);
 }

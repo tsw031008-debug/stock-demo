@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -14,6 +16,19 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public Result<Void> handleMissingRequestParameter(MissingServletRequestParameterException exception) {
+        return Result.error(ResultCode.OPERATION_ERROR, "请求参数不能为空：" + exception.getParameterName());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public Result<Void> handleRequestParameterTypeMismatch(MethodArgumentTypeMismatchException exception) {
+        String message = java.time.LocalDate.class.equals(exception.getRequiredType())
+                ? "日期格式必须为yyyy-MM-dd：" + exception.getName()
+                : "请求参数格式错误：" + exception.getName();
+        return Result.error(ResultCode.OPERATION_ERROR, message);
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Result<Void> handleMethodArgumentNotValid(

@@ -3,7 +3,7 @@ package cn.djct.stockdemo.service.stockalert.impl;
 import cn.djct.stockdemo.common.TechnologyStockRankingCalculator;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
 import cn.djct.stockdemo.pojo.dto.TechnologyStockQuoteDto;
-import cn.djct.stockdemo.pojo.dto.TechnologyStockRankingDto;
+import cn.djct.stockdemo.pojo.vo.TechnologyStockRankingRespVo;
 import cn.djct.stockdemo.service.stockalert.TechnologyStockPoolSourceService;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ class TechnologyStockRankingServiceImplTest {
                         .tradeDate(STATISTICS_DATE)
                         .build()
         );
-        TechnologyStockRankingDto expected = TechnologyStockRankingDto.builder()
+        TechnologyStockRankingRespVo expected = TechnologyStockRankingRespVo.builder()
                 .statisticsDate(STATISTICS_DATE)
                 .build();
         when(stockDailyQuoteMapper.selectLatestTradeDate())
@@ -69,7 +69,7 @@ class TechnologyStockRankingServiceImplTest {
                 quotes
         )).thenReturn(expected);
 
-        TechnologyStockRankingDto result = service.getLatest();
+        TechnologyStockRankingRespVo result = service.getLatest();
 
         assertEquals(expected, result);
         verify(stockDailyQuoteMapper).selectTechnologyStockQuotes(stockCodes, targetDates);

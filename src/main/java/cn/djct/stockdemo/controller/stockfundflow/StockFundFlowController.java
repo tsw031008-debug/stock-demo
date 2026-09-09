@@ -1,8 +1,6 @@
 package cn.djct.stockdemo.controller.stockfundflow;
 
 import cn.djct.stockdemo.common.Result;
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockFundFlowDto;
 import cn.djct.stockdemo.pojo.vo.PageRespVo;
 import cn.djct.stockdemo.pojo.vo.StockFundFlowRespVo;
 import cn.djct.stockdemo.pojo.vo.StockFundFlowSynchronizeRespVo;
@@ -20,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.List;
 
 /**
  * 股票资金流向接口。
@@ -51,23 +48,7 @@ public class StockFundFlowController {
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "20") int pageSize
     ) {
-        // 查询分页业务数据
-        PageDto<StockFundFlowDto> page = stockFundFlowService.findByTradeDate(
-                tradeDate,
-                pageNum,
-                pageSize
-        );
-        // 只返回需求要求的股票和资金流向字段
-        List<StockFundFlowRespVo> records = page.getRecords().stream()
-                .map(this::toResponse)
-                .toList();
-        PageRespVo<StockFundFlowRespVo> response = PageRespVo.<StockFundFlowRespVo>builder()
-                .pageNum(page.getPageNum())
-                .pageSize(page.getPageSize())
-                .total(page.getTotal())
-                .records(records)
-                .build();
-        return Result.success("操作成功", response);
+        return Result.success("操作成功", stockFundFlowService.findByTradeDate(tradeDate, pageNum, pageSize));
     }
 
     @Operation(summary = "手动同步当天股票资金流向")
@@ -88,19 +69,5 @@ public class StockFundFlowController {
      * @param fundFlow 资金流向业务数据
      * @return 资金流向接口响应
      */
-    private StockFundFlowRespVo toResponse(StockFundFlowDto fundFlow) {
-        return StockFundFlowRespVo.builder()
-                .tradeDate(fundFlow.getTradeDate())
-                .stockCode(fundFlow.getStockCode())
-                .stockName(fundFlow.getStockName())
-                .latestPrice(fundFlow.getLatestPrice())
-                .changePercent(fundFlow.getChangePercent())
-                .mainNetInflowYuan(fundFlow.getMainNetInflowYuan())
-                .mainNetInflowRatio(fundFlow.getMainNetInflowRatio())
-                .superLargeNetInflowYuan(fundFlow.getSuperLargeNetInflowYuan())
-                .superLargeNetInflowRatio(fundFlow.getSuperLargeNetInflowRatio())
-                .largeNetInflowYuan(fundFlow.getLargeNetInflowYuan())
-                .largeNetInflowRatio(fundFlow.getLargeNetInflowRatio())
-                .build();
-    }
+
 }

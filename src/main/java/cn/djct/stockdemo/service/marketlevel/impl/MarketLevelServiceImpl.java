@@ -3,7 +3,7 @@ package cn.djct.stockdemo.service.marketlevel.impl;
 import cn.djct.stockdemo.common.MarketLevelCalculator;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
 import cn.djct.stockdemo.pojo.dto.DailyMarketTurnoverDto;
-import cn.djct.stockdemo.pojo.dto.MarketLevelDto;
+import cn.djct.stockdemo.pojo.vo.MarketLevelRespVo;
 import cn.djct.stockdemo.pojo.dto.MarketTurnoverRecordDto;
 import cn.djct.stockdemo.service.marketlevel.MarketLevelService;
 import cn.djct.stockdemo.service.marketlevel.MarketLevelSourceService;
@@ -91,7 +91,7 @@ public class MarketLevelServiceImpl implements MarketLevelService {
      * @return 最新市场水位
      */
     @Override
-    public MarketLevelDto getLatest() {
+    public MarketLevelRespVo getLatest() {
         // 使用上海时区确定当前日期和时间
         LocalDate currentDate = LocalDate.now(clock);
         LocalTime currentTime = LocalTime.now(clock);

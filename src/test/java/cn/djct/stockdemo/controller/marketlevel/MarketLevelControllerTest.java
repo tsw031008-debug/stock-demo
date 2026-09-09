@@ -13,10 +13,10 @@ import cn.djct.stockdemo.mapper.StockFundFlowMapper;
 import cn.djct.stockdemo.mapper.StockPlateDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.StockPlateMapper;
 import cn.djct.stockdemo.mapper.TradeCalendarMapper;
-import cn.djct.stockdemo.pojo.dto.MarketLevelDto;
-import cn.djct.stockdemo.pojo.dto.MarketPeriodComparisonDto;
-import cn.djct.stockdemo.pojo.dto.MarketPeriodItemDto;
-import cn.djct.stockdemo.pojo.dto.RecentStockRiseCountDto;
+import cn.djct.stockdemo.pojo.vo.MarketLevelRespVo;
+import cn.djct.stockdemo.pojo.vo.MarketPeriodComparisonRespVo;
+import cn.djct.stockdemo.pojo.vo.MarketPeriodItemRespVo;
+import cn.djct.stockdemo.pojo.vo.RecentStockRiseCountRespVo;
 import cn.djct.stockdemo.service.marketlevel.MarketLevelService;
 import cn.djct.stockdemo.service.marketlevel.MarketPeriodComparisonService;
 import cn.djct.stockdemo.service.marketlevel.RecentStockRiseCountService;
@@ -87,7 +87,7 @@ class MarketLevelControllerTest {
 
     @Test
     void shouldReturnLatestMarketLevel() throws Exception {
-        when(marketLevelService.getLatest()).thenReturn(MarketLevelDto.builder()
+        when(marketLevelService.getLatest()).thenReturn(MarketLevelRespVo.builder()
                 .style("过渡期")
                 .previousThreeDayAverageTurnoverYi(new BigDecimal("8000.00"))
                 .currentTurnoverYi(new BigDecimal("9000.00"))
@@ -108,7 +108,7 @@ class MarketLevelControllerTest {
     @Test
     void shouldReturnWeeklyAndMonthlyPeriodComparison() throws Exception {
         LocalDate statisticsDate = LocalDate.of(2026, 8, 28);
-        when(marketPeriodComparisonService.getLatest()).thenReturn(MarketPeriodComparisonDto.builder()
+        when(marketPeriodComparisonService.getLatest()).thenReturn(MarketPeriodComparisonRespVo.builder()
                 .statisticsTradeDate(statisticsDate)
                 .weekly(List.of(item("YOY", "2026-07-20~2026-07-24", "9000.00")))
                 .monthly(List.of(item("CURRENT", "2026年08月", "10000.00")))
@@ -118,6 +118,10 @@ class MarketLevelControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.statisticsTradeDate").value("2026-08-28"))
                 .andExpect(jsonPath("$.data.weekly[0].comparisonType").value("YOY"))
+                .andExpect(jsonPath("$.data.weekly[0].startDate").value("2026-08-01"))
+                .andExpect(jsonPath("$.data.weekly[0].endDate").value("2026-08-28"))
+                .andExpect(jsonPath("$.data.weekly[0].tradingDayCount").value(20))
+                .andExpect(jsonPath("$.data.weekly[0].available").value(true))
                 .andExpect(jsonPath("$.data.weekly[0].averageTurnoverYi").value(9000.00))
                 .andExpect(jsonPath("$.data.monthly[0].periodLabel").value("2026年08月"));
     }
@@ -126,7 +130,7 @@ class MarketLevelControllerTest {
     void shouldReturnRecentStockRiseCounts() throws Exception {
         LocalDate tradeDate = LocalDate.of(2026, 9, 4);
         when(recentStockRiseCountService.getLatest()).thenReturn(List.of(
-                RecentStockRiseCountDto.builder()
+                RecentStockRiseCountRespVo.builder()
                         .tradeDate(tradeDate)
                         .fiveDayRiseCount(494)
                         .tenDayRiseCount(1031)
@@ -141,8 +145,8 @@ class MarketLevelControllerTest {
                 .andExpect(jsonPath("$.data[0].tenDayRiseCount").value(1031));
     }
 
-    private MarketPeriodItemDto item(String type, String label, String average) {
-        return MarketPeriodItemDto.builder()
+    private MarketPeriodItemRespVo item(String type, String label, String average) {
+        return MarketPeriodItemRespVo.builder()
                 .comparisonType(type)
                 .periodLabel(label)
                 .startDate(LocalDate.of(2026, 8, 1))

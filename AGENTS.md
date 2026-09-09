@@ -119,7 +119,7 @@ plan/                   # 项目推进记录和当前状态
 - 常量使用 UPPER_SNAKE_CASE，如 `MAX_SYMBOLS_PER_REQUEST`。
 - 包名全部小写，使用 `cn.djct.stockdemo` 作为根包。
 - 前端传给后端的Web请求参数统一使用DTO接收，放在 `pojo.dto`，类名以 `Dto` 结尾；`@RequestBody` 禁止使用VO。
-- Service与Controller之间需要封装传输的数据也使用DTO，禁止直接传递数据库实体。
+- Service与Controller之间的结果若与接口VO字段、类型和业务含义一致，直接使用VO，允许Service及计算组件直接构造VO，禁止仅为分层复制一套DTO并逐字段转换。确有内部字段、单位转换、脱敏或不同响应结构时才保留独立DTO；禁止直接传递数据库实体作为公共API响应。
 - 数据源和数据库实体放在 `pojo.entity`。
 - 后端返回前端的Web响应对象统一使用VO，放在 `pojo.vo`，类名以 `Vo` 或 `RespVo` 结尾。
 - 定时任务类放在 `task`，复杂计算和操作放在 `face`，禁止在 Task 中堆积业务实现。

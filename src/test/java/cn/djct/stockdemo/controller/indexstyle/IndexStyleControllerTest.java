@@ -14,11 +14,11 @@ import cn.djct.stockdemo.mapper.StockFundFlowMapper;
 import cn.djct.stockdemo.mapper.StockPlateDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.StockPlateMapper;
 import cn.djct.stockdemo.mapper.TradeCalendarMapper;
-import cn.djct.stockdemo.pojo.dto.IndexDailyStyleDto;
-import cn.djct.stockdemo.pojo.dto.IndexEtfChangeDto;
-import cn.djct.stockdemo.pojo.dto.IndexEtfComparisonDto;
+import cn.djct.stockdemo.pojo.vo.IndexDailyStyleRespVo;
+import cn.djct.stockdemo.pojo.vo.IndexEtfChangeRespVo;
+import cn.djct.stockdemo.pojo.vo.IndexEtfComparisonRespVo;
 import cn.djct.stockdemo.pojo.dto.IndexStyleComparisonDto;
-import cn.djct.stockdemo.pojo.dto.IndexStyleItemDto;
+import cn.djct.stockdemo.pojo.vo.IndexStyleItemRespVo;
 import cn.djct.stockdemo.service.indexstyle.IndexStyleService;
 import cn.djct.stockdemo.service.indexstyle.IndexEtfService;
 import org.junit.jupiter.api.Test;
@@ -86,10 +86,10 @@ class IndexStyleControllerTest {
                         LocalDate.of(2026, 9, 2),
                         tradeDate
                 ))
-                .indices(List.of(IndexStyleItemDto.builder()
+                .indices(List.of(IndexStyleItemRespVo.builder()
                         .indexCode("000016")
                         .indexName("上证50")
-                        .dailyStyles(List.of(IndexDailyStyleDto.builder()
+                        .dailyStyles(List.of(IndexDailyStyleRespVo.builder()
                                 .tradeDate(tradeDate)
                                 .changePercent(new BigDecimal("1.25"))
                                 .strengthType(IndexStrengthType.STRONG)
@@ -110,10 +110,10 @@ class IndexStyleControllerTest {
     @Test
     void shouldReturnIndexEtfFiveDayChanges() throws Exception {
         LocalDate statisticsDate = LocalDate.of(2026, 9, 4);
-        when(indexEtfService.getLatest()).thenReturn(IndexEtfComparisonDto.builder()
+        when(indexEtfService.getLatest()).thenReturn(IndexEtfComparisonRespVo.builder()
                 .statisticsDate(statisticsDate)
                 .baseTradeDate(LocalDate.of(2026, 8, 28))
-                .etfs(List.of(IndexEtfChangeDto.builder()
+                .etfs(List.of(IndexEtfChangeRespVo.builder()
                         .etfCode("510050")
                         .indexName("上证50")
                         .changePercent(new BigDecimal("2.35"))

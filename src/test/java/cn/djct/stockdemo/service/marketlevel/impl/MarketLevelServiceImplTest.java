@@ -2,7 +2,7 @@ package cn.djct.stockdemo.service.marketlevel.impl;
 
 import cn.djct.stockdemo.common.MarketLevelCalculator;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.MarketLevelDto;
+import cn.djct.stockdemo.pojo.vo.MarketLevelRespVo;
 import cn.djct.stockdemo.pojo.dto.MarketTurnoverRecordDto;
 import cn.djct.stockdemo.service.marketlevel.MarketLevelSourceService;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
@@ -57,7 +57,7 @@ class MarketLevelServiceImplTest {
         when(tradeCalendarService.getPreviousTradingDay(currentDate, 1)).thenReturn(statisticsDate);
         prepareTurnovers(statisticsDate);
 
-        MarketLevelDto result = service.getLatest();
+        MarketLevelRespVo result = service.getLatest();
 
         assertEquals(new BigDecimal("9000.00"), result.getCurrentTurnoverYi());
         assertEquals(new BigDecimal("8000.00"), result.getPreviousThreeDayAverageTurnoverYi());

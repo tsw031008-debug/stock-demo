@@ -1,8 +1,8 @@
 package cn.djct.stockdemo.common;
 
 import cn.djct.stockdemo.pojo.dto.TechnologyStockQuoteDto;
-import cn.djct.stockdemo.pojo.dto.TechnologyStockRankDto;
-import cn.djct.stockdemo.pojo.dto.TechnologyStockRankingDto;
+import cn.djct.stockdemo.pojo.vo.TechnologyStockRankRespVo;
+import cn.djct.stockdemo.pojo.vo.TechnologyStockRankingRespVo;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -33,7 +33,7 @@ public class TechnologyStockRankingCalculator {
      * 使用六个交易日的日行情计算两组科技股前五名。
      * 潜力榜边界均为严格大于或严格小于，并按统计日当日涨幅绝对值排序。
      */
-    public TechnologyStockRankingDto calculate(
+    public TechnologyStockRankingRespVo calculate(
             LocalDate statisticsDate,
             LocalDate fiveDayBaseDate,
             LocalDate tenDayBaseDate,
@@ -95,7 +95,7 @@ public class TechnologyStockRankingCalculator {
             }
         }
 
-        return TechnologyStockRankingDto.builder()
+        return TechnologyStockRankingRespVo.builder()
                 .statisticsDate(statisticsDate)
                 .hotStocks(toRanking(hotCandidates))
                 .potentialStocks(toRanking(potentialCandidates))
@@ -209,18 +209,18 @@ public class TechnologyStockRankingCalculator {
     }
 
     //将候选列表转换为榜单列表
-    private List<TechnologyStockRankDto> toRanking(List<RankCandidate> candidates) {
+    private List<TechnologyStockRankRespVo> toRanking(List<RankCandidate> candidates) {
         //从大到小，相同涨幅按股票代码排序，取前5
         List<RankCandidate> sorted = candidates.stream()
                 .sorted(Comparator.comparing(RankCandidate::score).reversed()
                         .thenComparing(RankCandidate::stockCode))
                 .limit(RANKING_LIMIT)
                 .toList();
-        List<TechnologyStockRankDto> result = new ArrayList<>(sorted.size());
+        List<TechnologyStockRankRespVo> result = new ArrayList<>(sorted.size());
         //转换返回格式、补上排名。
         for (int index = 0; index < sorted.size(); index++) {
             RankCandidate candidate = sorted.get(index);
-            result.add(TechnologyStockRankDto.builder()
+            result.add(TechnologyStockRankRespVo.builder()
                     .rank(index + 1)
                     .stockCode(candidate.stockCode())
                     .stockName(candidate.stockName())

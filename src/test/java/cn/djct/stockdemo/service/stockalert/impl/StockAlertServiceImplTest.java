@@ -2,8 +2,8 @@ package cn.djct.stockdemo.service.stockalert.impl;
 
 import cn.djct.stockdemo.common.StockAlertCalculator;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockOpenBoardAlertDto;
+import cn.djct.stockdemo.pojo.vo.PageRespVo;
+import cn.djct.stockdemo.pojo.vo.StockOpenBoardAlertRespVo;
 import cn.djct.stockdemo.pojo.dto.StockSpeedAlertDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.service.stockdailyquote.StockQuoteSnapshotService;
@@ -125,11 +125,11 @@ class StockAlertServiceImplTest {
                         speedAlert("000003")
                 ));
         when(stockAlertCalculator.calculateOpenBoardAlerts(quotes)).thenReturn(List.of(
-                StockOpenBoardAlertDto.builder().stockCode("000001").build()
+                StockOpenBoardAlertRespVo.builder().stockCode("000001").build()
         ));
 
-        PageDto<StockSpeedAlertDto> speedPage = service.findSpeedAlerts(2, 2);
-        PageDto<StockOpenBoardAlertDto> openBoardPage = service.findOpenBoardAlerts(1, 20);
+        PageRespVo<StockSpeedAlertDto> speedPage = service.findSpeedAlerts(2, 2);
+        PageRespVo<StockOpenBoardAlertRespVo> openBoardPage = service.findOpenBoardAlerts(1, 20);
 
         assertEquals(3, speedPage.getTotal());
         assertEquals(List.of("000003"), speedPage.getRecords().stream()

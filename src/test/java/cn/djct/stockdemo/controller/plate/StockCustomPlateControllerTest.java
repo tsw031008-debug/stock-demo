@@ -13,9 +13,9 @@ import cn.djct.stockdemo.mapper.StockFundFlowMapper;
 import cn.djct.stockdemo.mapper.StockPlateDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.StockPlateMapper;
 import cn.djct.stockdemo.mapper.TradeCalendarMapper;
-import cn.djct.stockdemo.pojo.dto.StockCategoryTurnoverComparisonDto;
-import cn.djct.stockdemo.pojo.dto.StockCategoryTurnoverItemDto;
-import cn.djct.stockdemo.pojo.dto.StockCustomPlateDto;
+import cn.djct.stockdemo.pojo.vo.StockCategoryTurnoverComparisonRespVo;
+import cn.djct.stockdemo.pojo.vo.StockCategoryTurnoverItemRespVo;
+import cn.djct.stockdemo.pojo.vo.StockCustomPlateRespVo;
 import cn.djct.stockdemo.pojo.dto.StockCustomPlateSaveDto;
 import cn.djct.stockdemo.service.plate.StockCategoryTurnoverComparisonService;
 import cn.djct.stockdemo.service.plate.StockCustomPlateService;
@@ -81,10 +81,10 @@ class StockCustomPlateControllerTest {
     @Test
     void shouldReturnTwoTradingDayTurnoversInYi() throws Exception {
         when(comparisonService.getCurrent()).thenReturn(
-                StockCategoryTurnoverComparisonDto.builder()
+                StockCategoryTurnoverComparisonRespVo.builder()
                         .statisticsDate(LocalDate.of(2026, 8, 28))
                         .previousTradeDate(LocalDate.of(2026, 8, 27))
-                        .categories(List.of(StockCategoryTurnoverItemDto.builder()
+                        .categories(List.of(StockCategoryTurnoverItemRespVo.builder()
                                 .categoryCode("TECHNOLOGY")
                                 .categoryName("科技")
                                 .stockCount(523)
@@ -106,7 +106,7 @@ class StockCustomPlateControllerTest {
     @Test
     void shouldCreateCustomPlateWithCompleteMemberList() throws Exception {
         when(stockCustomPlateService.create(any(StockCustomPlateSaveDto.class)))
-                .thenReturn(StockCustomPlateDto.builder()
+                .thenReturn(StockCustomPlateRespVo.builder()
                 .id(16L)
                 .categoryCode("TECHNOLOGY")
                 .categoryName("科技")

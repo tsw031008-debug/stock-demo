@@ -1,7 +1,7 @@
 package cn.djct.stockdemo.service.marketlevel.impl;
 
 import cn.djct.stockdemo.mapper.MarketDailyTurnoverMapper;
-import cn.djct.stockdemo.pojo.dto.MarketPeriodComparisonDto;
+import cn.djct.stockdemo.pojo.vo.MarketPeriodComparisonRespVo;
 import cn.djct.stockdemo.pojo.entity.MarketDailyTurnover;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ class MarketPeriodComparisonServiceImplTest {
         preparePeriod(LocalDate.of(2026, 8, 1), statisticsDate,
                 List.of(statisticsDate), "600");
 
-        MarketPeriodComparisonDto result = service.getLatest();
+        MarketPeriodComparisonRespVo result = service.getLatest();
 
         assertEquals(statisticsDate, result.getStatisticsTradeDate());
         assertEquals(List.of("YOY", "MOM", "CURRENT"), result.getWeekly().stream()

@@ -13,8 +13,8 @@ import cn.djct.stockdemo.mapper.StockFundFlowMapper;
 import cn.djct.stockdemo.mapper.StockPlateDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.StockPlateMapper;
 import cn.djct.stockdemo.mapper.TradeCalendarMapper;
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockPlateLimitUpDto;
+import cn.djct.stockdemo.pojo.vo.PageRespVo;
+import cn.djct.stockdemo.pojo.vo.StockPlateLimitUpRespVo;
 import cn.djct.stockdemo.service.plate.StockPlateDailyQuoteService;
 import cn.djct.stockdemo.service.plate.StockPlateQueryService;
 import cn.djct.stockdemo.service.plate.StockPlateSyncService;
@@ -81,11 +81,11 @@ class StockPlateControllerTest {
     @Test
     void shouldReturnLimitUpStatisticsWithDefaultPagination() throws Exception {
         when(stockPlateQueryService.findLimitUpStatistics(1, 20)).thenReturn(
-                PageDto.<StockPlateLimitUpDto>builder()
+                PageRespVo.<StockPlateLimitUpRespVo>builder()
                         .pageNum(1)
                         .pageSize(20)
                         .total(1)
-                        .records(List.of(StockPlateLimitUpDto.builder()
+                        .records(List.of(StockPlateLimitUpRespVo.builder()
                                 .plateName("科技-概")
                                 .totalStockCount(100)
                                 .plateChangePercent(new BigDecimal("1.25"))

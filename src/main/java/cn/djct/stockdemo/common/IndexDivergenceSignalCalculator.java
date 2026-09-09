@@ -1,7 +1,7 @@
 package cn.djct.stockdemo.common;
 
 import cn.djct.stockdemo.constant.IndexDivergenceSignalType;
-import cn.djct.stockdemo.pojo.dto.IndexDivergenceSignalDto;
+import cn.djct.stockdemo.pojo.vo.IndexDivergenceSignalRespVo;
 import cn.djct.stockdemo.pojo.dto.IndexMacdDto;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +23,7 @@ public class IndexDivergenceSignalCalculator {
     /**
      * 根据按分钟升序排列的MACD结果识别全部背离信号。
      */
-    public List<IndexDivergenceSignalDto> detect(List<IndexMacdDto> macdItems) {
+    public List<IndexDivergenceSignalRespVo> detect(List<IndexMacdDto> macdItems) {
         Objects.requireNonNull(macdItems, "MACD结果不能为空");
         if (macdItems.size() < 2) {
             //保证计算信号最少两个k线个数
@@ -56,12 +56,12 @@ public class IndexDivergenceSignalCalculator {
             }
         }
 
-        List<IndexDivergenceSignalDto> signals = new ArrayList<>();
+        List<IndexDivergenceSignalRespVo> signals = new ArrayList<>();
         //将所有符合条件的顶背离和底背离信号添加到结果列表中
         appendBottomSignals(bottomIntervals, signals);
         appendTopSignals(topIntervals, signals);
         //按信号时间升序排序结果列表
-        signals.sort(Comparator.comparing(IndexDivergenceSignalDto::getSignalTime));
+        signals.sort(Comparator.comparing(IndexDivergenceSignalRespVo::getSignalTime));
         return List.copyOf(signals);
     }
 
@@ -143,7 +143,7 @@ public class IndexDivergenceSignalCalculator {
 
     private void appendBottomSignals(
             List<DivergenceInterval> intervals,
-            List<IndexDivergenceSignalDto> signals
+            List<IndexDivergenceSignalRespVo> signals
     ) {
         //遍历所有底背离候选区间
         for (int index = 1; index < intervals.size(); index++) {
@@ -163,7 +163,7 @@ public class IndexDivergenceSignalCalculator {
 
     private void appendTopSignals(
             List<DivergenceInterval> intervals,
-            List<IndexDivergenceSignalDto> signals
+            List<IndexDivergenceSignalRespVo> signals
     ) {
         //遍历所有顶背离候选区间
         for (int index = 1; index < intervals.size(); index++) {
@@ -181,12 +181,12 @@ public class IndexDivergenceSignalCalculator {
         }
     }
 
-    private IndexDivergenceSignalDto toSignal(
+    private IndexDivergenceSignalRespVo toSignal(
             IndexDivergenceSignalType signalType,
             DivergenceInterval previous,
             DivergenceInterval current
     ) {
-        return IndexDivergenceSignalDto.builder()
+        return IndexDivergenceSignalRespVo.builder()
                 .signalType(signalType)
                 .signalTime(current.endTime)
                 .previousIntervalStartTime(previous.startTime)

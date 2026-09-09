@@ -2,8 +2,8 @@ package cn.djct.stockdemo.common;
 
 import cn.djct.stockdemo.constant.IndexStrengthType;
 import cn.djct.stockdemo.constant.IndexStyleIndex;
-import cn.djct.stockdemo.pojo.dto.IndexDailyStyleDto;
-import cn.djct.stockdemo.pojo.dto.IndexStyleItemDto;
+import cn.djct.stockdemo.pojo.vo.IndexDailyStyleRespVo;
+import cn.djct.stockdemo.pojo.vo.IndexStyleItemRespVo;
 import cn.djct.stockdemo.pojo.entity.IndexDailyQuote;
 import org.springframework.stereotype.Component;
 
@@ -33,7 +33,7 @@ public class IndexStyleCalculator {
      * @param quotes 四个指数在五个交易日的完整行情
      * @return 按产品固定指数顺序排列的五日结果
      */
-    public List<IndexStyleItemDto> calculate(
+    public List<IndexStyleItemRespVo> calculate(
             List<LocalDate> tradeDates,
             List<IndexDailyQuote> quotes
     ) {
@@ -44,7 +44,7 @@ public class IndexStyleCalculator {
         //计算每日对应的指数涨幅
         Map<LocalDate, Map<String, BigDecimal>> changesByDate = indexChanges(tradeDates, quotes);
         //标记强弱map
-        Map<String, List<IndexDailyStyleDto>> stylesByCode = new HashMap<>();
+        Map<String, List<IndexDailyStyleRespVo>> stylesByCode = new HashMap<>();
 
         for (IndexStyleIndex index : IndexStyleIndex.values()) {
             //按照指数代码初始化强弱列表
@@ -70,7 +70,7 @@ public class IndexStyleCalculator {
                 } else if (!allEqual && index.getIndexCode().equals(weakestCode)) {
                     strengthType = IndexStrengthType.WEAK;
                 }
-                stylesByCode.get(index.getIndexCode()).add(IndexDailyStyleDto.builder()
+                stylesByCode.get(index.getIndexCode()).add(IndexDailyStyleRespVo.builder()
                         .tradeDate(tradeDate)
                         .changePercent(dailyChanges.get(index.getIndexCode()))
                         .strengthType(strengthType)
@@ -78,9 +78,9 @@ public class IndexStyleCalculator {
             }
         }
 
-        List<IndexStyleItemDto> result = new ArrayList<>(IndexStyleIndex.values().length);
+        List<IndexStyleItemRespVo> result = new ArrayList<>(IndexStyleIndex.values().length);
         for (IndexStyleIndex index : IndexStyleIndex.values()) {
-            result.add(IndexStyleItemDto.builder()
+            result.add(IndexStyleItemRespVo.builder()
                     .indexCode(index.getIndexCode())
                     .indexName(index.getIndexName())
                     .dailyStyles(stylesByCode.get(index.getIndexCode()))

@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.common;
 
-import cn.djct.stockdemo.pojo.dto.StockPlateLimitUpDto;
+import cn.djct.stockdemo.pojo.vo.StockPlateLimitUpRespVo;
 import cn.djct.stockdemo.pojo.dto.StockPlateMemberDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.pojo.entity.StockPlateDailyQuote;
@@ -120,7 +120,7 @@ public class StockPlateCalculator {
      * @param currentQuotes 当前全市场实时行情
      * @return 排序后的板块涨停统计
      */
-    public List<StockPlateLimitUpDto> calculateLimitUpStatistics(
+    public List<StockPlateLimitUpRespVo> calculateLimitUpStatistics(
             List<StockPlateMemberDto> members,
             List<StockDailyQuote> currentQuotes
     ) {
@@ -133,7 +133,7 @@ public class StockPlateCalculator {
         Map<String, StockDailyQuote> quotesByCode = indexQuotes(currentQuotes);
 
         // 每个板块仅计算当天有效股票清单与板块成分股的交集
-        List<StockPlateLimitUpDto> result = new ArrayList<>(plateGroups.size());
+        List<StockPlateLimitUpRespVo> result = new ArrayList<>(plateGroups.size());
         for (PlateGroup plate : plateGroups.values()) {
             // 过滤出当前板块的有效行情数据
             List<StockDailyQuote> validQuotes = plate.stockCodes().stream()
@@ -157,7 +157,7 @@ public class StockPlateCalculator {
             BigDecimal limitUpRatio = BigDecimal.valueOf(limitUpCount)
                     .multiply(ONE_HUNDRED)
                     .divide(BigDecimal.valueOf(validQuotes.size()), RESPONSE_SCALE, RoundingMode.HALF_UP);
-            result.add(StockPlateLimitUpDto.builder()
+            result.add(StockPlateLimitUpRespVo.builder()
                     .plateName(plate.plateName())
                     .totalStockCount(validQuotes.size())
                     .plateChangePercent(changePercent.setScale(RESPONSE_SCALE, RoundingMode.HALF_UP))
@@ -168,18 +168,18 @@ public class StockPlateCalculator {
         // 依次按涨停数、涨停占比、板块涨幅倒序和板块名称升序排列
         return result.stream()
                 .sorted(Comparator.comparing(
-                                StockPlateLimitUpDto::getLimitUpStockCount,
+                                StockPlateLimitUpRespVo::getLimitUpStockCount,
                                 Comparator.reverseOrder()
                         )
                         .thenComparing(
-                                StockPlateLimitUpDto::getLimitUpRatio,
+                                StockPlateLimitUpRespVo::getLimitUpRatio,
                                 Comparator.reverseOrder()
                         )
                         .thenComparing(
-                                StockPlateLimitUpDto::getPlateChangePercent,
+                                StockPlateLimitUpRespVo::getPlateChangePercent,
                                 Comparator.reverseOrder()
                         )
-                        .thenComparing(StockPlateLimitUpDto::getPlateName))
+                        .thenComparing(StockPlateLimitUpRespVo::getPlateName))
                 .toList();
     }
 

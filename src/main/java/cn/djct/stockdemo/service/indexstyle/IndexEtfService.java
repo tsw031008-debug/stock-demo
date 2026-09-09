@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.service.indexstyle;
 
-import cn.djct.stockdemo.pojo.dto.IndexEtfComparisonDto;
+import cn.djct.stockdemo.pojo.vo.IndexEtfComparisonRespVo;
 
 /**
  * 指数ETF涨幅查询服务。
@@ -12,5 +12,5 @@ public interface IndexEtfService {
      *
      * @return ETF涨幅比较结果
      */
-    IndexEtfComparisonDto getLatest();
+    IndexEtfComparisonRespVo getLatest();
 }

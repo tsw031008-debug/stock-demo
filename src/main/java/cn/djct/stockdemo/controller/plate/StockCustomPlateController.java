@@ -1,19 +1,12 @@
 package cn.djct.stockdemo.controller.plate;
 
 import cn.djct.stockdemo.common.Result;
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockCategoryTurnoverComparisonDto;
-import cn.djct.stockdemo.pojo.dto.StockCategoryTurnoverItemDto;
-import cn.djct.stockdemo.pojo.dto.StockCustomCategoryDto;
-import cn.djct.stockdemo.pojo.dto.StockCustomPlateDto;
-import cn.djct.stockdemo.pojo.dto.StockCustomPlateMemberDto;
-import cn.djct.stockdemo.pojo.dto.StockCustomPlateSaveDto;
 import cn.djct.stockdemo.pojo.vo.PageRespVo;
 import cn.djct.stockdemo.pojo.vo.StockCategoryTurnoverComparisonRespVo;
-import cn.djct.stockdemo.pojo.vo.StockCategoryTurnoverItemRespVo;
 import cn.djct.stockdemo.pojo.vo.StockCustomCategoryRespVo;
-import cn.djct.stockdemo.pojo.vo.StockCustomPlateMemberRespVo;
 import cn.djct.stockdemo.pojo.vo.StockCustomPlateRespVo;
+import cn.djct.stockdemo.pojo.vo.StockCustomPlateMemberRespVo;
+import cn.djct.stockdemo.pojo.dto.StockCustomPlateSaveDto;
 import cn.djct.stockdemo.service.plate.StockCategoryTurnoverComparisonService;
 import cn.djct.stockdemo.service.plate.StockCustomPlateService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,11 +45,7 @@ public class StockCustomPlateController {
     @Operation(summary = "查询固定四大类")
     @GetMapping("/customCategories")
     public Result<List<StockCustomCategoryRespVo>> findCategories() {
-        List<StockCustomCategoryRespVo> response = stockCustomPlateService.findCategories()
-                .stream()
-                .map(this::toCategoryResponse)
-                .toList();
-        return Result.success("操作成功", response);
+        return Result.success("操作成功", stockCustomPlateService.findCategories());
     }
 
     /**
@@ -74,10 +63,7 @@ public class StockCustomPlateController {
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "20") int pageSize
     ) {
-        return Result.success(
-                "操作成功",
-                toPlatePage(stockCustomPlateService.findPlates(categoryCode, pageNum, pageSize))
-        );
+        return Result.success("操作成功", stockCustomPlateService.findPlates(categoryCode, pageNum, pageSize));
     }
 
     /**
@@ -95,10 +81,7 @@ public class StockCustomPlateController {
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "20") int pageSize
     ) {
-        return Result.success(
-                "操作成功",
-                toMemberPage(stockCustomPlateService.findMembers(plateId, pageNum, pageSize))
-        );
+        return Result.success("操作成功", stockCustomPlateService.findMembers(plateId, pageNum, pageSize));
     }
 
     /**
@@ -110,8 +93,7 @@ public class StockCustomPlateController {
     @Operation(summary = "新增自定义子板块及成分股")
     @PostMapping("/customPlates")
     public Result<StockCustomPlateRespVo> create(@Valid @RequestBody StockCustomPlateSaveDto request) {
-        StockCustomPlateDto plate = stockCustomPlateService.create(request);
-        return Result.success("操作成功", toPlateResponse(plate));
+        return Result.success("操作成功", stockCustomPlateService.create(request));
     }
 
     /**
@@ -127,8 +109,7 @@ public class StockCustomPlateController {
             @PathVariable Long plateId,
             @Valid @RequestBody StockCustomPlateSaveDto request
     ) {
-        StockCustomPlateDto plate = stockCustomPlateService.update(plateId, request);
-        return Result.success("操作成功", toPlateResponse(plate));
+        return Result.success("操作成功", stockCustomPlateService.update(plateId, request));
     }
 
     /**
@@ -152,71 +133,7 @@ public class StockCustomPlateController {
     @Operation(summary = "查询四大类当前与上一交易日成交额")
     @GetMapping("/turnoverComparison")
     public Result<StockCategoryTurnoverComparisonRespVo> getTurnoverComparison() {
-        return Result.success("操作成功", toComparisonResponse(comparisonService.getCurrent()));
+        return Result.success("操作成功", comparisonService.getCurrent());
     }
 
-    private StockCustomCategoryRespVo toCategoryResponse(StockCustomCategoryDto category) {
-        return StockCustomCategoryRespVo.builder()
-                .categoryCode(category.getCategoryCode())
-                .categoryName(category.getCategoryName())
-                .build();
-    }
-
-    private StockCustomPlateRespVo toPlateResponse(StockCustomPlateDto plate) {
-        return StockCustomPlateRespVo.builder()
-                .id(plate.getId())
-                .categoryCode(plate.getCategoryCode())
-                .categoryName(plate.getCategoryName())
-                .plateName(plate.getPlateName())
-                .build();
-    }
-
-    private PageRespVo<StockCustomPlateRespVo> toPlatePage(PageDto<StockCustomPlateDto> page) {
-        return PageRespVo.<StockCustomPlateRespVo>builder()
-                .pageNum(page.getPageNum())
-                .pageSize(page.getPageSize())
-                .total(page.getTotal())
-                .records(page.getRecords().stream().map(this::toPlateResponse).toList())
-                .build();
-    }
-
-    private PageRespVo<StockCustomPlateMemberRespVo> toMemberPage(
-            PageDto<StockCustomPlateMemberDto> page
-    ) {
-        return PageRespVo.<StockCustomPlateMemberRespVo>builder()
-                .pageNum(page.getPageNum())
-                .pageSize(page.getPageSize())
-                .total(page.getTotal())
-                .records(page.getRecords().stream()
-                        .map(member -> StockCustomPlateMemberRespVo.builder()
-                                .stockCode(member.getStockCode())
-                                .stockName(member.getStockName())
-                                .build())
-                        .toList())
-                .build();
-    }
-
-    private StockCategoryTurnoverComparisonRespVo toComparisonResponse(
-            StockCategoryTurnoverComparisonDto comparison
-    ) {
-        return StockCategoryTurnoverComparisonRespVo.builder()
-                .statisticsDate(comparison.getStatisticsDate())
-                .previousTradeDate(comparison.getPreviousTradeDate())
-                .categories(comparison.getCategories().stream()
-                        .map(this::toTurnoverItemResponse)
-                        .toList())
-                .build();
-    }
-
-    private StockCategoryTurnoverItemRespVo toTurnoverItemResponse(
-            StockCategoryTurnoverItemDto item
-    ) {
-        return StockCategoryTurnoverItemRespVo.builder()
-                .categoryCode(item.getCategoryCode())
-                .categoryName(item.getCategoryName())
-                .stockCount(item.getStockCount())
-                .currentTurnoverYi(item.getCurrentTurnoverYi())
-                .previousTurnoverYi(item.getPreviousTurnoverYi())
-                .build();
-    }
 }

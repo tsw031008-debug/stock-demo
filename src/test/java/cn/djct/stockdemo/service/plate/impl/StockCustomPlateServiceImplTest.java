@@ -2,7 +2,7 @@ package cn.djct.stockdemo.service.plate.impl;
 
 import cn.djct.stockdemo.mapper.StockBasicMapper;
 import cn.djct.stockdemo.mapper.StockCustomPlateMapper;
-import cn.djct.stockdemo.pojo.dto.StockCustomPlateDto;
+import cn.djct.stockdemo.pojo.vo.StockCustomPlateRespVo;
 import cn.djct.stockdemo.pojo.dto.StockCustomPlateSaveDto;
 import cn.djct.stockdemo.pojo.entity.StockBasic;
 import cn.djct.stockdemo.pojo.entity.StockCustomPlate;
@@ -53,7 +53,7 @@ class StockCustomPlateServiceImplTest {
             return 1;
         });
 
-        StockCustomPlateDto result = service.create(StockCustomPlateSaveDto.builder()
+        StockCustomPlateRespVo result = service.create(StockCustomPlateSaveDto.builder()
                 .categoryCode("FINANCE")
                 .plateName(" 核心金融 ")
                 .stockCodes(List.of("000001", "600000", "000001"))

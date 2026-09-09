@@ -1,8 +1,8 @@
 package cn.djct.stockdemo.service.plate.impl;
 
 import cn.djct.stockdemo.common.StockPlateCalculator;
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockPlateLimitUpDto;
+import cn.djct.stockdemo.pojo.vo.PageRespVo;
+import cn.djct.stockdemo.pojo.vo.StockPlateLimitUpRespVo;
 import cn.djct.stockdemo.pojo.dto.StockPlateMemberDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.service.plate.StockPlateQueryService;
@@ -79,7 +79,7 @@ public class StockPlateQueryServiceImpl implements StockPlateQueryService {
      * @return 板块涨停统计分页数据
      */
     @Override
-    public PageDto<StockPlateLimitUpDto> findLimitUpStatistics(int pageNum, int pageSize) {
+    public PageRespVo<StockPlateLimitUpRespVo> findLimitUpStatistics(int pageNum, int pageSize) {
         // 先校验分页和交易时间，非法请求不读取板块或请求实时行情
         validatePage(pageNum, pageSize);
         LocalDate tradeDate = validateQueryTime();
@@ -91,7 +91,7 @@ public class StockPlateQueryServiceImpl implements StockPlateQueryService {
 
         // 复用全市场60秒行情快照，完成全量计算和排序后再分页
         List<StockDailyQuote> currentQuotes = stockQuoteSnapshotService.getSnapshot(tradeDate);
-        List<StockPlateLimitUpDto> statistics = stockPlateCalculator.calculateLimitUpStatistics(
+        List<StockPlateLimitUpRespVo> statistics = stockPlateCalculator.calculateLimitUpStatistics(
                 members,
                 currentQuotes
         );
@@ -127,20 +127,20 @@ public class StockPlateQueryServiceImpl implements StockPlateQueryService {
     /**
      * 对已完成全量排序的板块统计进行分页。
      */
-    private PageDto<StockPlateLimitUpDto> paginate(
-            List<StockPlateLimitUpDto> records,
+    private PageRespVo<StockPlateLimitUpRespVo> paginate(
+            List<StockPlateLimitUpRespVo> records,
             int pageNum,
             int pageSize
     ) {
         long start = (long) (pageNum - 1) * pageSize;
-        List<StockPlateLimitUpDto> pageRecords;
+        List<StockPlateLimitUpRespVo> pageRecords;
         if (start >= records.size()) {
             pageRecords = List.of();
         } else {
             int end = (int) Math.min(start + pageSize, records.size());
             pageRecords = records.subList((int) start, end);
         }
-        return PageDto.<StockPlateLimitUpDto>builder()
+        return PageRespVo.<StockPlateLimitUpRespVo>builder()
                 .pageNum(pageNum)
                 .pageSize(pageSize)
                 .total(records.size())

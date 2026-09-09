@@ -13,7 +13,7 @@
 
     <!--分页查询指定交易日的资金流向原始数据-->
     <select id="selectPageByTradeDate"
-            resultType="cn.djct.stockdemo.pojo.dto.StockFundFlowDto">
+            resultType="cn.djct.stockdemo.pojo.vo.StockFundFlowRespVo">
         SELECT
             trade_date,
             stock_code,

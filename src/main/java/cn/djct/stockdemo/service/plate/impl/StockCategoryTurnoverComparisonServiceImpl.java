@@ -2,8 +2,8 @@ package cn.djct.stockdemo.service.plate.impl;
 
 import cn.djct.stockdemo.constant.StockCustomCategory;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.StockCategoryTurnoverComparisonDto;
-import cn.djct.stockdemo.pojo.dto.StockCategoryTurnoverItemDto;
+import cn.djct.stockdemo.pojo.vo.StockCategoryTurnoverComparisonRespVo;
+import cn.djct.stockdemo.pojo.vo.StockCategoryTurnoverItemRespVo;
 import cn.djct.stockdemo.pojo.dto.StockCustomPlateMemberRelationDto;
 import cn.djct.stockdemo.pojo.dto.StockTurnoverByDateDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
@@ -92,7 +92,7 @@ public class StockCategoryTurnoverComparisonServiceImpl
      * @return 四大类两个交易日的成交额对比
      */
     @Override
-    public StockCategoryTurnoverComparisonDto getCurrent() {
+    public StockCategoryTurnoverComparisonRespVo getCurrent() {
         LocalDate statisticsDate = validateQueryTime();
         LocalDate previousTradeDate = tradeCalendarService.getPreviousTradingDay(statisticsDate, 1);
         // 获取四大类各自对应的成分股，各自进行去重
@@ -123,7 +123,7 @@ public class StockCategoryTurnoverComparisonServiceImpl
         Map<LocalDate, Map<String, BigDecimal>> turnovers = indexTurnovers(turnoverRecords);
 
         // 使用各大类自己的去重成分股，分别计算今日和昨日成交额。
-        List<StockCategoryTurnoverItemDto> categories = Arrays.stream(StockCustomCategory.values())
+        List<StockCategoryTurnoverItemRespVo> categories = Arrays.stream(StockCustomCategory.values())
                 .map(category -> buildItem(
                         category,
                         categoryStocks.get(category),
@@ -132,7 +132,7 @@ public class StockCategoryTurnoverComparisonServiceImpl
                         turnovers
                 ))
                 .toList();
-        return StockCategoryTurnoverComparisonDto.builder()
+        return StockCategoryTurnoverComparisonRespVo.builder()
                 .statisticsDate(statisticsDate)
                 .previousTradeDate(previousTradeDate)
                 .categories(categories)
@@ -255,7 +255,7 @@ public class StockCategoryTurnoverComparisonServiceImpl
      * @param previousTradeDate  上一交易日
      * @param turnovers     成交额
      */
-    private StockCategoryTurnoverItemDto buildItem(
+    private StockCategoryTurnoverItemRespVo buildItem(
             StockCustomCategory category,
             Set<String> stockCodes,
             LocalDate statisticsDate,
@@ -265,7 +265,7 @@ public class StockCategoryTurnoverComparisonServiceImpl
         // 计算今日和昨日的成交额
         BigDecimal current = sumRequired(category, stockCodes, statisticsDate, turnovers);
         BigDecimal previous = sumRequired(category, stockCodes, previousTradeDate, turnovers);
-        return StockCategoryTurnoverItemDto.builder()
+        return StockCategoryTurnoverItemRespVo.builder()
                 .categoryCode(category.name())
                 .categoryName(category.getDisplayName())
                 .stockCount(stockCodes.size())

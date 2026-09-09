@@ -1,7 +1,7 @@
 package cn.djct.stockdemo.service.stockfundflow;
 
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockFundFlowDto;
+import cn.djct.stockdemo.pojo.vo.PageRespVo;
+import cn.djct.stockdemo.pojo.vo.StockFundFlowRespVo;
 import cn.djct.stockdemo.pojo.entity.StockFundFlow;
 
 import java.time.LocalDate;
@@ -20,7 +20,7 @@ public interface StockFundFlowService {
      * @param pageSize  每页数量
      * @return 资金流向分页数据
      */
-    PageDto<StockFundFlowDto> findByTradeDate(
+    PageRespVo<StockFundFlowRespVo> findByTradeDate(
             LocalDate tradeDate,
             int pageNum,
             int pageSize

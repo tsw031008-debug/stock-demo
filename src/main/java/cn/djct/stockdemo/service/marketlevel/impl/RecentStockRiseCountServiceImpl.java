@@ -2,7 +2,7 @@ package cn.djct.stockdemo.service.marketlevel.impl;
 
 import cn.djct.stockdemo.common.RecentStockRiseCountCalculator;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.RecentStockRiseCountDto;
+import cn.djct.stockdemo.pojo.vo.RecentStockRiseCountRespVo;
 import cn.djct.stockdemo.pojo.dto.StockClosePriceDto;
 import cn.djct.stockdemo.service.marketlevel.RecentStockRiseCountService;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
@@ -34,7 +34,7 @@ public class RecentStockRiseCountServiceImpl implements RecentStockRiseCountServ
      * 使用最新股票日行情统计最近10个交易日的股票涨幅家数。
      */
     @Override
-    public List<RecentStockRiseCountDto> getLatest() {
+    public List<RecentStockRiseCountRespVo> getLatest() {
         // 以日行情表最新交易日作为统计截止日，盘中未落库行情不会参与统计
         LocalDate statisticsDate = stockDailyQuoteMapper.selectLatestTradeDate();
         if (statisticsDate == null) {

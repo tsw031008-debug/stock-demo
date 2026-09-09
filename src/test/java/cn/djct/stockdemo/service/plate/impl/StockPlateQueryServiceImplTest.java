@@ -1,8 +1,8 @@
 package cn.djct.stockdemo.service.plate.impl;
 
 import cn.djct.stockdemo.common.StockPlateCalculator;
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockPlateLimitUpDto;
+import cn.djct.stockdemo.pojo.vo.PageRespVo;
+import cn.djct.stockdemo.pojo.vo.StockPlateLimitUpRespVo;
 import cn.djct.stockdemo.pojo.dto.StockPlateMemberDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.service.plate.StockPlateService;
@@ -75,7 +75,7 @@ class StockPlateQueryServiceImplTest {
         List<StockDailyQuote> quotes = List.of(StockDailyQuote.builder()
                 .stockCode("000001")
                 .build());
-        List<StockPlateLimitUpDto> statistics = List.of(
+        List<StockPlateLimitUpRespVo> statistics = List.of(
                 statistic("板块一"),
                 statistic("板块二"),
                 statistic("板块三")
@@ -85,11 +85,11 @@ class StockPlateQueryServiceImplTest {
         when(stockQuoteSnapshotService.getSnapshot(TRADE_DATE)).thenReturn(quotes);
         when(stockPlateCalculator.calculateLimitUpStatistics(members, quotes)).thenReturn(statistics);
 
-        PageDto<StockPlateLimitUpDto> result = service.findLimitUpStatistics(2, 2);
+        PageRespVo<StockPlateLimitUpRespVo> result = service.findLimitUpStatistics(2, 2);
 
         assertEquals(3, result.getTotal());
         assertEquals(List.of("板块三"), result.getRecords().stream()
-                .map(StockPlateLimitUpDto::getPlateName)
+                .map(StockPlateLimitUpRespVo::getPlateName)
                 .toList());
     }
 
@@ -122,8 +122,8 @@ class StockPlateQueryServiceImplTest {
     /**
      * 创建板块统计结果。
      */
-    private StockPlateLimitUpDto statistic(String plateName) {
-        return StockPlateLimitUpDto.builder()
+    private StockPlateLimitUpRespVo statistic(String plateName) {
+        return StockPlateLimitUpRespVo.builder()
                 .plateName(plateName)
                 .build();
     }

@@ -3,7 +3,7 @@ package cn.djct.stockdemo.service.indexdivergence.impl;
 import cn.djct.stockdemo.constant.IndexDivergenceSignalType;
 import cn.djct.stockdemo.mapper.IndexDivergenceSignalMapper;
 import cn.djct.stockdemo.mapper.IndexMinuteQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.IndexDivergenceOverviewDto;
+import cn.djct.stockdemo.pojo.vo.IndexDivergenceLatestRespVo;
 import cn.djct.stockdemo.pojo.entity.IndexDivergenceSignal;
 import cn.djct.stockdemo.pojo.entity.IndexMinuteQuote;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
@@ -58,7 +58,7 @@ class IndexDivergenceQueryServiceImplTest {
         )).thenReturn(List.of(signal));
         IndexDivergenceQueryServiceImpl service = serviceAt("2026-08-28T02:00:00Z");
 
-        IndexDivergenceOverviewDto result = service.getLatest();
+        IndexDivergenceLatestRespVo result = service.getLatest();
 
         assertEquals(tradeDate, result.getTradeDate());
         assertEquals(new BigDecimal("3820.10"), result.getPreviousClosePrice());
@@ -88,7 +88,7 @@ class IndexDivergenceQueryServiceImplTest {
         )).thenReturn(List.of());
         IndexDivergenceQueryServiceImpl service = serviceAt("2026-08-28T01:00:00Z");
 
-        IndexDivergenceOverviewDto result = service.getLatest();
+        IndexDivergenceLatestRespVo result = service.getLatest();
 
         assertEquals(previousTradeDate, result.getTradeDate());
         assertEquals(List.of(), result.getCurveData());

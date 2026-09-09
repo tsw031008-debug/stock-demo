@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.service.marketlevel;
 
-import cn.djct.stockdemo.pojo.dto.RecentStockRiseCountDto;
+import cn.djct.stockdemo.pojo.vo.RecentStockRiseCountRespVo;
 
 import java.util.List;
 
@@ -14,5 +14,5 @@ public interface RecentStockRiseCountService {
      *
      * @return 按交易日升序排列的统计结果
      */
-    List<RecentStockRiseCountDto> getLatest();
+    List<RecentStockRiseCountRespVo> getLatest();
 }

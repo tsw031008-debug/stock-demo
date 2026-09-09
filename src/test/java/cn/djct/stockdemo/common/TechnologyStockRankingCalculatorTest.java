@@ -1,7 +1,7 @@
 package cn.djct.stockdemo.common;
 
 import cn.djct.stockdemo.pojo.dto.TechnologyStockQuoteDto;
-import cn.djct.stockdemo.pojo.dto.TechnologyStockRankingDto;
+import cn.djct.stockdemo.pojo.vo.TechnologyStockRankingRespVo;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -42,7 +42,7 @@ class TechnologyStockRankingCalculatorTest {
         quotes.addAll(quotes("000007", "*ST科技", "200", "10", "500000000",
                 "100", "100", "180", "100", "100"));
 
-        TechnologyStockRankingDto result = calculate(quotes);
+        TechnologyStockRankingRespVo result = calculate(quotes);
 
         assertEquals(List.of("000001", "000002", "000003", "000004", "000005"),
                 result.getHotStocks().stream().map(item -> item.getStockCode()).toList());
@@ -71,7 +71,7 @@ class TechnologyStockRankingCalculatorTest {
         quotes.addAll(quotes("000007", "成交额等于边界", "110", "7", "100000000",
                 "100", "100", "100", "100", "100"));
 
-        TechnologyStockRankingDto result = calculate(quotes);
+        TechnologyStockRankingRespVo result = calculate(quotes);
 
         assertEquals(List.of("000001"), result.getPotentialStocks().stream()
                 .map(item -> item.getStockCode())
@@ -86,7 +86,7 @@ class TechnologyStockRankingCalculatorTest {
         ));
         quotes.removeIf(quote -> SIXTY_DAY_BASE_DATE.equals(quote.getTradeDate()));
 
-        TechnologyStockRankingDto result = calculate(quotes);
+        TechnologyStockRankingRespVo result = calculate(quotes);
 
         assertEquals(List.of("000001"), result.getHotStocks().stream()
                 .map(item -> item.getStockCode())
@@ -118,7 +118,7 @@ class TechnologyStockRankingCalculatorTest {
             data.addAll(quotes(String.format("%06d", data.size() + 1), name,
                     "110", "-5", "200000000", "100", "100", "100", "100", "100"));
         }
-        TechnologyStockRankingDto result = calculate(data);
+        TechnologyStockRankingRespVo result = calculate(data);
         assertEquals(List.of("st科技"), result.getHotStocks().stream()
                 .map(item -> item.getStockName()).toList());
         assertEquals(List.of("st科技"), result.getPotentialStocks().stream()
@@ -131,7 +131,7 @@ class TechnologyStockRankingCalculatorTest {
                 quote("000001", "科技一", STATISTICS_DATE, "90", null, null),
                 quote("000001", "科技一", TWENTY_DAY_BASE_DATE, "100", null, null)
         );
-        TechnologyStockRankingDto result = calculate(data);
+        TechnologyStockRankingRespVo result = calculate(data);
         // 热门榜允许负20日涨幅，不要求当日涨幅、成交额或其他周期价格。
         assertEquals("000001", result.getHotStocks().get(0).getStockCode());
         assertEquals(List.of(), result.getPotentialStocks());
@@ -145,7 +145,7 @@ class TechnologyStockRankingCalculatorTest {
                     index % 2 == 0 ? "-5" : "5", "200000000",
                     "100", "100", "100", "100", "100"));
         }
-        TechnologyStockRankingDto result = calculate(data);
+        TechnologyStockRankingRespVo result = calculate(data);
         List<String> expected = List.of("000001", "000002", "000003", "000004", "000005");
         assertEquals(expected, result.getHotStocks().stream()
                 .map(item -> item.getStockCode()).toList());
@@ -153,7 +153,7 @@ class TechnologyStockRankingCalculatorTest {
                 .map(item -> item.getStockCode()).toList());
     }
 
-    private TechnologyStockRankingDto calculate(List<TechnologyStockQuoteDto> quotes) {
+    private TechnologyStockRankingRespVo calculate(List<TechnologyStockQuoteDto> quotes) {
         return calculator.calculate(
                 STATISTICS_DATE,
                 FIVE_DAY_BASE_DATE,

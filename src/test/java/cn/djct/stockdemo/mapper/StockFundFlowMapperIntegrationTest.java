@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.mapper;
 
-import cn.djct.stockdemo.pojo.dto.StockFundFlowDto;
+import cn.djct.stockdemo.pojo.vo.StockFundFlowRespVo;
 import cn.djct.stockdemo.pojo.entity.StockFundFlow;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +46,7 @@ class StockFundFlowMapperIntegrationTest {
         assertEquals(2, stockFundFlowMapper.countByTradeDate(tradeDate));
         assertEquals(0, new BigDecimal("300.00").compareTo(mainNetInflow));
 
-        List<StockFundFlowDto> page = stockFundFlowMapper.selectPageByTradeDate(
+        List<StockFundFlowRespVo> page = stockFundFlowMapper.selectPageByTradeDate(
                 tradeDate,
                 0,
                 1

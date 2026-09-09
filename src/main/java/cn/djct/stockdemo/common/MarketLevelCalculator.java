@@ -1,7 +1,7 @@
 package cn.djct.stockdemo.common;
 
 import cn.djct.stockdemo.pojo.dto.DailyMarketTurnoverDto;
-import cn.djct.stockdemo.pojo.dto.MarketLevelDto;
+import cn.djct.stockdemo.pojo.vo.MarketLevelRespVo;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -32,7 +32,7 @@ public class MarketLevelCalculator {
      * @param historicalTurnovers       统计日前5个交易日成交额，按交易日倒序排列
      * @return 市场水位计算结果
      */
-    public MarketLevelDto calculate(
+    public MarketLevelRespVo calculate(
             BigDecimal currentTurnoverAmountYuan,
             List<DailyMarketTurnoverDto> historicalTurnovers
     ) {
@@ -54,7 +54,7 @@ public class MarketLevelCalculator {
         }
 
         // 使用未舍入金额完成风格和量比计算，最终结果统一保留2位小数
-        return MarketLevelDto.builder()
+        return MarketLevelRespVo.builder()
                 //风格
                 .style(determineStyle(previousThreeDayTotal))
                 //前3日成交额均值

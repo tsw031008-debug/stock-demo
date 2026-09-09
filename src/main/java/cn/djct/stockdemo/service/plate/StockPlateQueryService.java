@@ -1,7 +1,7 @@
 package cn.djct.stockdemo.service.plate;
 
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockPlateLimitUpDto;
+import cn.djct.stockdemo.pojo.vo.PageRespVo;
+import cn.djct.stockdemo.pojo.vo.StockPlateLimitUpRespVo;
 
 /**
  * 股票板块查询服务。
@@ -15,5 +15,5 @@ public interface StockPlateQueryService {
      * @param pageSize 每页数量
      * @return 板块涨停统计分页数据
      */
-    PageDto<StockPlateLimitUpDto> findLimitUpStatistics(int pageNum, int pageSize);
+    PageRespVo<StockPlateLimitUpRespVo> findLimitUpStatistics(int pageNum, int pageSize);
 }

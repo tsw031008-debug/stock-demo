@@ -13,8 +13,8 @@ import cn.djct.stockdemo.mapper.StockFundFlowMapper;
 import cn.djct.stockdemo.mapper.StockPlateDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.StockPlateMapper;
 import cn.djct.stockdemo.mapper.TradeCalendarMapper;
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockFundFlowDto;
+import cn.djct.stockdemo.pojo.vo.PageRespVo;
+import cn.djct.stockdemo.pojo.vo.StockFundFlowRespVo;
 import cn.djct.stockdemo.service.stockfundflow.StockFundFlowService;
 import cn.djct.stockdemo.service.stockfundflow.StockFundFlowSyncService;
 import org.junit.jupiter.api.Test;
@@ -98,7 +98,7 @@ class StockFundFlowControllerTest {
     @Test
     void shouldQueryFundFlowsByTradeDate() throws Exception {
         LocalDate tradeDate = LocalDate.of(2026, 8, 25);
-        StockFundFlowDto record = StockFundFlowDto.builder()
+        StockFundFlowRespVo record = StockFundFlowRespVo.builder()
                 .tradeDate(tradeDate)
                 .stockCode("600519")
                 .stockName("贵州茅台")
@@ -112,7 +112,7 @@ class StockFundFlowControllerTest {
                 .largeNetInflowRatio(new BigDecimal("-5.12"))
                 .build();
         when(stockFundFlowService.findByTradeDate(tradeDate, 1, 20))
-                .thenReturn(PageDto.<StockFundFlowDto>builder()
+                .thenReturn(PageRespVo.<StockFundFlowRespVo>builder()
                         .pageNum(1)
                         .pageSize(20)
                         .total(5211)

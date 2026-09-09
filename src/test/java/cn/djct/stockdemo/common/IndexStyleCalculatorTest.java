@@ -2,7 +2,7 @@ package cn.djct.stockdemo.common;
 
 import cn.djct.stockdemo.constant.IndexStrengthType;
 import cn.djct.stockdemo.constant.IndexStyleIndex;
-import cn.djct.stockdemo.pojo.dto.IndexStyleItemDto;
+import cn.djct.stockdemo.pojo.vo.IndexStyleItemRespVo;
 import cn.djct.stockdemo.pojo.entity.IndexDailyQuote;
 import org.junit.jupiter.api.Test;
 
@@ -31,10 +31,10 @@ class IndexStyleCalculatorTest {
             quotes.add(quote(IndexStyleIndex.CSI_1000, tradeDates.get(dayIndex), 100));
         }
 
-        List<IndexStyleItemDto> result = calculator.calculate(tradeDates, quotes);
+        List<IndexStyleItemRespVo> result = calculator.calculate(tradeDates, quotes);
 
         assertEquals(List.of("000016", "000001", "399102", "000852"),
-                result.stream().map(IndexStyleItemDto::getIndexCode).toList());
+                result.stream().map(IndexStyleItemRespVo::getIndexCode).toList());
         assertEquals(IndexStrengthType.STRONG,
                 result.get(1).getDailyStyles().get(0).getStrengthType());
         assertEquals(IndexStrengthType.WEAK,
@@ -53,7 +53,7 @@ class IndexStyleCalculatorTest {
             }
         }
 
-        List<IndexStyleItemDto> result = calculator.calculate(tradeDates, quotes);
+        List<IndexStyleItemRespVo> result = calculator.calculate(tradeDates, quotes);
 
         assertEquals(20, result.stream().mapToInt(item -> item.getDailyStyles().size()).sum());
         result.forEach(item -> item.getDailyStyles().forEach(style ->

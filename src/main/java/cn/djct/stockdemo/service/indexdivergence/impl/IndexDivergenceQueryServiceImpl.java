@@ -2,9 +2,9 @@ package cn.djct.stockdemo.service.indexdivergence.impl;
 
 import cn.djct.stockdemo.mapper.IndexDivergenceSignalMapper;
 import cn.djct.stockdemo.mapper.IndexMinuteQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.IndexDivergenceOverviewDto;
-import cn.djct.stockdemo.pojo.dto.IndexDivergenceSignalDto;
-import cn.djct.stockdemo.pojo.dto.IndexMinuteCurvePointDto;
+import cn.djct.stockdemo.pojo.vo.IndexDivergenceLatestRespVo;
+import cn.djct.stockdemo.pojo.vo.IndexDivergenceSignalRespVo;
+import cn.djct.stockdemo.pojo.vo.IndexMinuteCurvePointRespVo;
 import cn.djct.stockdemo.pojo.entity.IndexDivergenceSignal;
 import cn.djct.stockdemo.pojo.entity.IndexMinuteQuote;
 import cn.djct.stockdemo.service.indexdivergence.IndexDivergenceQueryService;
@@ -66,7 +66,7 @@ public class IndexDivergenceQueryServiceImpl implements IndexDivergenceQueryServ
      * 交易日09:31后返回当天数据，否则返回上一交易日数据。
      */
     @Override
-    public IndexDivergenceOverviewDto getLatest() {
+    public IndexDivergenceLatestRespVo getLatest() {
         // 获取当前日期和时间
         LocalDate currentDate = LocalDate.now(clock);
         LocalTime currentTime = LocalTime.now(clock);
@@ -85,7 +85,7 @@ public class IndexDivergenceQueryServiceImpl implements IndexDivergenceQueryServ
                         tradeDate.atStartOfDay(),
                         tradeDate.plusDays(1).atStartOfDay()
                 );
-        return IndexDivergenceOverviewDto.builder()
+        return IndexDivergenceLatestRespVo.builder()
                 .tradeDate(tradeDate)
                 .previousClosePrice(quotes.isEmpty() ? null : quotes.get(0).getPreviousClosePrice())
                 .curveData(quotes.stream().map(this::toCurvePoint).toList())
@@ -102,15 +102,15 @@ public class IndexDivergenceQueryServiceImpl implements IndexDivergenceQueryServ
         return tradeCalendarService.getPreviousTradingDay(currentDate, 1);
     }
 
-    private IndexMinuteCurvePointDto toCurvePoint(IndexMinuteQuote quote) {
-        return IndexMinuteCurvePointDto.builder()
+    private IndexMinuteCurvePointRespVo toCurvePoint(IndexMinuteQuote quote) {
+        return IndexMinuteCurvePointRespVo.builder()
                 .quoteTime(quote.getQuoteTime())
                 .currentPrice(quote.getCurrentPrice())
                 .build();
     }
 
-    private IndexDivergenceSignalDto toSignal(IndexDivergenceSignal signal) {
-        return IndexDivergenceSignalDto.builder()
+    private IndexDivergenceSignalRespVo toSignal(IndexDivergenceSignal signal) {
+        return IndexDivergenceSignalRespVo.builder()
                 .signalType(signal.getSignalType())
                 .signalTime(signal.getSignalTime())
                 .previousIntervalStartTime(signal.getPreviousIntervalStartTime())

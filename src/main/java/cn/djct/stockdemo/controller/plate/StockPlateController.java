@@ -1,8 +1,6 @@
 package cn.djct.stockdemo.controller.plate;
 
 import cn.djct.stockdemo.common.Result;
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockPlateLimitUpDto;
 import cn.djct.stockdemo.pojo.vo.PageRespVo;
 import cn.djct.stockdemo.pojo.vo.StockPlateLimitUpRespVo;
 import cn.djct.stockdemo.pojo.vo.StockPlateOperationRespVo;
@@ -20,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.List;
 
 /**
  * 股票板块接口。
@@ -50,21 +47,7 @@ public class StockPlateController {
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "20") int pageSize
     ) {
-        // 查询分页业务数据并只转换文档明确要求的五个响应字段
-        PageDto<StockPlateLimitUpDto> page = stockPlateQueryService.findLimitUpStatistics(
-                pageNum,
-                pageSize
-        );
-        List<StockPlateLimitUpRespVo> records = page.getRecords().stream()
-                .map(this::toResponse)
-                .toList();
-        PageRespVo<StockPlateLimitUpRespVo> response = PageRespVo.<StockPlateLimitUpRespVo>builder()
-                .pageNum(page.getPageNum())
-                .pageSize(page.getPageSize())
-                .total(page.getTotal())
-                .records(records)
-                .build();
-        return Result.success("操作成功", response);
+        return Result.success("操作成功", stockPlateQueryService.findLimitUpStatistics(pageNum, pageSize));
     }
 
     /**
@@ -107,15 +90,6 @@ public class StockPlateController {
     /**
      * 将板块涨停业务数据转换为接口响应。
      */
-    private StockPlateLimitUpRespVo toResponse(StockPlateLimitUpDto statistic) {
-        return StockPlateLimitUpRespVo.builder()
-                .plateName(statistic.getPlateName())
-                .totalStockCount(statistic.getTotalStockCount())
-                .plateChangePercent(statistic.getPlateChangePercent())
-                .limitUpStockCount(statistic.getLimitUpStockCount())
-                .limitUpRatio(statistic.getLimitUpRatio())
-                .build();
-    }
 
     /**
      * 构建板块同步或回补操作响应。

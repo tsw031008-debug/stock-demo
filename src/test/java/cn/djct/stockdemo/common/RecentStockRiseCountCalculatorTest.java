@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.common;
 
-import cn.djct.stockdemo.pojo.dto.RecentStockRiseCountDto;
+import cn.djct.stockdemo.pojo.vo.RecentStockRiseCountRespVo;
 import cn.djct.stockdemo.pojo.dto.StockClosePriceDto;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +32,7 @@ class RecentStockRiseCountCalculatorTest {
                 quote("600000", statisticsDate, "105.01")
         );
 
-        List<RecentStockRiseCountDto> result = calculator.calculate(
+        List<RecentStockRiseCountRespVo> result = calculator.calculate(
                 tradingDates,
                 closePrices
         );
@@ -51,7 +51,7 @@ class RecentStockRiseCountCalculatorTest {
         LocalDate fiveDayBaseDate = tradingDates.get(14);
         LocalDate statisticsDate = tradingDates.get(19);
 
-        List<RecentStockRiseCountDto> result = calculator.calculate(
+        List<RecentStockRiseCountRespVo> result = calculator.calculate(
                 tradingDates,
                 List.of(
                         quote("000001", fiveDayBaseDate, "100"),

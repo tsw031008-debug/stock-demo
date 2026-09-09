@@ -1,8 +1,8 @@
 package cn.djct.stockdemo.service.stockfundflow;
 
 import cn.djct.stockdemo.mapper.StockFundFlowMapper;
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockFundFlowDto;
+import cn.djct.stockdemo.pojo.vo.PageRespVo;
+import cn.djct.stockdemo.pojo.vo.StockFundFlowRespVo;
 import cn.djct.stockdemo.pojo.entity.StockFundFlow;
 import cn.djct.stockdemo.service.stockfundflow.impl.StockFundFlowServiceImpl;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
@@ -46,7 +46,7 @@ class StockFundFlowServiceTest {
         StockFundFlowMapper mapper = mock(StockFundFlowMapper.class);
         TradeCalendarService tradeCalendarService = mock(TradeCalendarService.class);
         StockFundFlowService service = new StockFundFlowServiceImpl(mapper, tradeCalendarService);
-        StockFundFlowDto record = StockFundFlowDto.builder()
+        StockFundFlowRespVo record = StockFundFlowRespVo.builder()
                 .tradeDate(tradeDate)
                 .stockCode("600519")
                 .mainNetInflowYuan(new BigDecimal("100.00"))
@@ -55,7 +55,7 @@ class StockFundFlowServiceTest {
         when(mapper.countByTradeDate(tradeDate)).thenReturn(5211);
         when(mapper.selectPageByTradeDate(tradeDate, 20, 20)).thenReturn(List.of(record));
 
-        PageDto<StockFundFlowDto> page = service.findByTradeDate(tradeDate, 2, 20);
+        PageRespVo<StockFundFlowRespVo> page = service.findByTradeDate(tradeDate, 2, 20);
 
         assertEquals(2, page.getPageNum());
         assertEquals(20, page.getPageSize());
@@ -90,7 +90,7 @@ class StockFundFlowServiceTest {
         when(tradeCalendarService.isTradingDay(tradeDate)).thenReturn(true);
         when(mapper.countByTradeDate(tradeDate)).thenReturn(0);
 
-        PageDto<StockFundFlowDto> page = service.findByTradeDate(tradeDate, 1, 20);
+        PageRespVo<StockFundFlowRespVo> page = service.findByTradeDate(tradeDate, 1, 20);
 
         assertEquals(0, page.getTotal());
         assertEquals(List.of(), page.getRecords());

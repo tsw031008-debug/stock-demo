@@ -1,7 +1,7 @@
 package cn.djct.stockdemo.common;
 
 import cn.djct.stockdemo.pojo.dto.DailyMarketTurnoverDto;
-import cn.djct.stockdemo.pojo.dto.MarketLevelDto;
+import cn.djct.stockdemo.pojo.vo.MarketLevelRespVo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -29,7 +29,7 @@ class MarketLevelCalculatorTest {
                 turnover(5, "11000")
         );
 
-        MarketLevelDto result = calculator.calculate(amountYuan("12000"), history);
+        MarketLevelRespVo result = calculator.calculate(amountYuan("12000"), history);
 
         assertEquals("过渡期", result.getStyle());
         assertEquals(new BigDecimal("8000.00"), result.getPreviousThreeDayAverageTurnoverYi());

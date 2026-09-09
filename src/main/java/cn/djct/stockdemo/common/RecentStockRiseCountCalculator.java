@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.common;
 
-import cn.djct.stockdemo.pojo.dto.RecentStockRiseCountDto;
+import cn.djct.stockdemo.pojo.vo.RecentStockRiseCountRespVo;
 import cn.djct.stockdemo.pojo.dto.StockClosePriceDto;
 import org.springframework.stereotype.Component;
 
@@ -32,7 +32,7 @@ public class RecentStockRiseCountCalculator {
      * @param closePrices  20个交易日的股票收盘价原始数据
      * @return 按交易日升序排列的最近10日统计结果
      */
-    public List<RecentStockRiseCountDto> calculate(
+    public List<RecentStockRiseCountRespVo> calculate(
             List<LocalDate> tradingDates,
             List<StockClosePriceDto> closePrices
     ) {
@@ -55,7 +55,7 @@ public class RecentStockRiseCountCalculator {
             }
         }
 
-        List<RecentStockRiseCountDto> result = new ArrayList<>(DISPLAY_TRADING_DAY_COUNT);
+        List<RecentStockRiseCountRespVo> result = new ArrayList<>(DISPLAY_TRADING_DAY_COUNT);
         for (int index = TEN_DAY_OFFSET; index < tradingDates.size(); index++) {
             LocalDate tradeDate = tradingDates.get(index);
             LocalDate fiveDayBaseDate = tradingDates.get(index - FIVE_DAY_OFFSET);
@@ -84,7 +84,7 @@ public class RecentStockRiseCountCalculator {
                 }
             }
 
-            result.add(RecentStockRiseCountDto.builder()
+            result.add(RecentStockRiseCountRespVo.builder()
                     .tradeDate(tradeDate)
                     .fiveDayRiseCount(fiveDayRiseCount)
                     .tenDayRiseCount(tenDayRiseCount)

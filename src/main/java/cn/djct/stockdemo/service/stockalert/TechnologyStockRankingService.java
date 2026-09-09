@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.service.stockalert;
 
-import cn.djct.stockdemo.pojo.dto.TechnologyStockRankingDto;
+import cn.djct.stockdemo.pojo.vo.TechnologyStockRankingRespVo;
 
 /**
  * 热门和潜力科技股榜单查询服务。
@@ -12,5 +12,5 @@ public interface TechnologyStockRankingService {
      *
      * @return 热门和潜力科技股前五名
      */
-    TechnologyStockRankingDto getLatest();
+    TechnologyStockRankingRespVo getLatest();
 }

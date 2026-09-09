@@ -13,11 +13,11 @@ import cn.djct.stockdemo.mapper.StockFundFlowMapper;
 import cn.djct.stockdemo.mapper.StockPlateDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.StockPlateMapper;
 import cn.djct.stockdemo.mapper.TradeCalendarMapper;
-import cn.djct.stockdemo.pojo.dto.PageDto;
-import cn.djct.stockdemo.pojo.dto.StockOpenBoardAlertDto;
+import cn.djct.stockdemo.pojo.vo.PageRespVo;
+import cn.djct.stockdemo.pojo.vo.StockOpenBoardAlertRespVo;
 import cn.djct.stockdemo.pojo.dto.StockSpeedAlertDto;
-import cn.djct.stockdemo.pojo.dto.TechnologyStockRankDto;
-import cn.djct.stockdemo.pojo.dto.TechnologyStockRankingDto;
+import cn.djct.stockdemo.pojo.vo.TechnologyStockRankRespVo;
+import cn.djct.stockdemo.pojo.vo.TechnologyStockRankingRespVo;
 import cn.djct.stockdemo.service.stockalert.StockAlertService;
 import cn.djct.stockdemo.service.stockalert.TechnologyStockRankingService;
 import org.junit.jupiter.api.Test;
@@ -40,6 +40,53 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class StockAlertControllerTest {
 
+    @Test
+    void shouldReturnTurnoverRankingsForRequestedDate() throws Exception {
+        var date = java.time.LocalDate.of(2026, 9, 8);
+        var stocks = List.of(TechnologyStockRankRespVo.builder()
+                .rank(1).stockCode("000001").stockName("科技").build());
+        when(technologyStockTurnoverService.findByTradeDate(date)).thenReturn(
+                cn.djct.stockdemo.pojo.vo.TechnologyStockTurnoverRespVo.builder()
+                        .statisticsDate(date).increasingStocks(stocks)
+                        .institutionalStocks(stocks).abnormalStocks(List.of()).build());
+        mockMvc.perform(get("/api/stockAlert/technologyStockTurnover").param("tradeDate", "2026-09-08"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.statisticsDate").value("2026-09-08"))
+                .andExpect(jsonPath("$.data.increasingStocks[0].stockCode").value("000001"))
+                .andExpect(jsonPath("$.data.institutionalStocks[0].rank").value(1))
+                .andExpect(jsonPath("$.data.abnormalStocks").isEmpty());
+        verify(technologyStockTurnoverService).findByTradeDate(date);
+    }
+
+    @Test
+    void shouldReportInvalidDateFormat() throws Exception {
+        mockMvc.perform(get("/api/stockAlert/technologyStockTurnover").param("tradeDate", "invalid"))
+                .andExpect(jsonPath("$.message").value("日期格式必须为yyyy-MM-dd：tradeDate"));
+        org.mockito.Mockito.verifyNoInteractions(technologyStockTurnoverService);
+    }
+
+    @Test
+    void shouldReportEmptyDateAndInvalidNumericParameter() throws Exception {
+        mockMvc.perform(get("/api/stockAlert/technologyStockTurnover").param("tradeDate", ""))
+                .andExpect(jsonPath("$.message").value("请求参数不能为空：tradeDate"));
+        mockMvc.perform(get("/api/stockAlert/speed").param("pageNum", "invalid"))
+                .andExpect(jsonPath("$.message").value("请求参数格式错误：pageNum"));
+        org.mockito.Mockito.verifyNoInteractions(technologyStockTurnoverService, stockAlertService);
+    }
+
+    @Test
+    void shouldReportMissingDateAndUnavailableData() throws Exception {
+        mockMvc.perform(get("/api/stockAlert/technologyStockTurnover"))
+                .andExpect(jsonPath("$.message").value("请求参数不能为空：tradeDate"));
+        org.mockito.Mockito.verifyNoInteractions(technologyStockTurnoverService);
+        var date = java.time.LocalDate.of(2026, 9, 8);
+        when(technologyStockTurnoverService.findByTradeDate(date))
+                .thenThrow(new IllegalStateException("该交易日日线数据尚未就绪，暂无法计算"));
+        mockMvc.perform(get("/api/stockAlert/technologyStockTurnover").param("tradeDate", date.toString()))
+                .andExpect(jsonPath("$.message").value("该交易日日线数据尚未就绪，暂无法计算"));
+    }
+
     @MockBean
     private IndexDailyQuoteMapper indexDailyQuoteMapper;
 
@@ -51,6 +98,8 @@ class StockAlertControllerTest {
 
     @MockBean
     private StockAlertService stockAlertService;
+    @MockBean
+    private cn.djct.stockdemo.service.stockalert.TechnologyStockTurnoverService technologyStockTurnoverService;
     @MockBean
     private TechnologyStockRankingService technologyStockRankingService;
     @MockBean
@@ -79,7 +128,7 @@ class StockAlertControllerTest {
 
     @Test
     void shouldReturnSpeedAlertsWithDefaultPagination() throws Exception {
-        when(stockAlertService.findSpeedAlerts(1, 20)).thenReturn(PageDto.<StockSpeedAlertDto>builder()
+        when(stockAlertService.findSpeedAlerts(1, 20)).thenReturn(PageRespVo.<StockSpeedAlertDto>builder()
                 .pageNum(1)
                 .pageSize(20)
                 .total(1)
@@ -109,11 +158,11 @@ class StockAlertControllerTest {
     @Test
     void shouldReturnOpenBoardAlertsWithRequestedPagination() throws Exception {
         when(stockAlertService.findOpenBoardAlerts(2, 10))
-                .thenReturn(PageDto.<StockOpenBoardAlertDto>builder()
+                .thenReturn(PageRespVo.<StockOpenBoardAlertRespVo>builder()
                         .pageNum(2)
                         .pageSize(10)
                         .total(11)
-                        .records(List.of(StockOpenBoardAlertDto.builder()
+                        .records(List.of(StockOpenBoardAlertRespVo.builder()
                                 .stockCode("600000")
                                 .stockName("浦发银行")
                                 .currentPrice(new BigDecimal("10.50"))
@@ -137,7 +186,7 @@ class StockAlertControllerTest {
     @Test
     void shouldReturnTechnologyStockRankings() throws Exception {
         when(technologyStockRankingService.getLatest()).thenReturn(
-                TechnologyStockRankingDto.builder()
+                TechnologyStockRankingRespVo.builder()
                         .statisticsDate(java.time.LocalDate.of(2026, 9, 7))
                         .hotStocks(List.of(rank(1, "000001", "科技一")))
                         .potentialStocks(List.of(rank(1, "600000", "科技二")))
@@ -156,8 +205,8 @@ class StockAlertControllerTest {
         verify(technologyStockRankingService).getLatest();
     }
 
-    private TechnologyStockRankDto rank(int rank, String stockCode, String stockName) {
-        return TechnologyStockRankDto.builder()
+    private TechnologyStockRankRespVo rank(int rank, String stockCode, String stockName) {
+        return TechnologyStockRankRespVo.builder()
                 .rank(rank)
                 .stockCode(stockCode)
                 .stockName(stockName)
