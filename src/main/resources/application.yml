@@ -80,6 +80,12 @@ logging:
     cn.djct.stockdemo: ${APP_LOG_LEVEL:INFO}
 
 stock:
+  alert:
+    technology:
+      source:
+        url: ${TECHNOLOGY_STOCK_POOL_SOURCE_URL:http://test46.szdjct.com/exponent/manage/plate/getStockByPlateId?plateId=676}
+        connect-timeout: ${TECHNOLOGY_STOCK_POOL_SOURCE_CONNECT_TIMEOUT:5s}
+        read-timeout: ${TECHNOLOGY_STOCK_POOL_SOURCE_READ_TIMEOUT:20s}
   basic:
     source:
       count-url: ${STOCK_BASIC_SOURCE_COUNT_URL:https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeStockCount}

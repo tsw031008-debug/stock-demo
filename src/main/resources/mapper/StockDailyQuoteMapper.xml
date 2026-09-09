@@ -51,6 +51,28 @@
         ORDER BY trade_date DESC, stock_code ASC
     </select>
 
+    <!--按候选股票和六个目标交易日批量查询科技股榜单计算所需的原始行情。-->
+    <select id="selectTechnologyStockQuotes"
+            resultType="cn.djct.stockdemo.pojo.dto.TechnologyStockQuoteDto">
+        SELECT
+            stock_code,
+            stock_name,
+            trade_date,
+            close_price,
+            turnover_amount_yuan,
+            change_percent
+        FROM stock_daily_quote
+        WHERE stock_code IN
+            <foreach collection="stockCodes" item="stockCode" open="(" separator="," close=")">
+                #{stockCode}
+            </foreach>
+          AND trade_date IN
+            <foreach collection="tradeDates" item="tradeDate" open="(" separator="," close=")">
+                #{tradeDate}
+            </foreach>
+        ORDER BY stock_code, trade_date
+    </select>
+
     <!--查询指定交易日用于板块计算的股票行情原始数据。-->
     <select id="selectForPlateCalculation"
             resultType="cn.djct.stockdemo.pojo.entity.StockDailyQuote">
