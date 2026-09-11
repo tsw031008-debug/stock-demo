@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.djct.stockdemo.mapper.StockSelectionRunMapper">
+    <!--成功标记与结果同事务提交，零入选也有完成记录。-->
+    <select id="isCompleted" resultType="boolean">
+        SELECT COUNT(*) FROM stock_selection_run
+        WHERE trade_date = #{tradeDate} AND strategy_type = #{strategyType} AND completed = 1
+    </select>
+
+    <!--记录最后一次成功完成时间，失败回滚不覆盖此前成功结果。-->
+    <insert id="completeRun">
+        INSERT INTO stock_selection_run (trade_date, strategy_type, completed, completed_at)
+        VALUES (#{tradeDate}, #{strategyType}, 1, CURRENT_TIMESTAMP)
+        ON DUPLICATE KEY UPDATE completed = 1, completed_at = CURRENT_TIMESTAMP
+    </insert>
+</mapper>

@@ -1,6 +1,8 @@
 package cn.djct.stockdemo.controller.stockalert;
 
 import cn.djct.stockdemo.common.Result;
+import cn.djct.stockdemo.pojo.vo.LeftSideStockRespVo;
+import cn.djct.stockdemo.service.stockalert.PlatformBreakoutService;
 import cn.djct.stockdemo.pojo.vo.TechnologyStockTurnoverRespVo;
 import cn.djct.stockdemo.service.stockalert.TechnologyStockTurnoverService;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -32,8 +34,22 @@ import java.time.LocalDate;
 public class StockAlertController {
 
     private final StockAlertService stockAlertService;
+    private final PlatformBreakoutService platformBreakoutService;
     private final TechnologyStockRankingService technologyStockRankingService;
     private final TechnologyStockTurnoverService technologyStockTurnoverService;
+
+    /** 按交易日分页查询平台突破选股结果。 */
+    @Operation(summary = "查询平台突破选股", description = "tradeDate必填且为交易日；pageNum默认1，pageSize默认20、最大100；按股票代码升序分页。"
+            + "返回该日最后一次成功的盘后选股结果，成功零入选返回空列表，未成功执行时提示未完成。"
+            + "价格沿用未复权日线，成交额单位为元，涨幅为百分数。")
+    @GetMapping("/platformBreakout")
+    public Result<PageRespVo<LeftSideStockRespVo>> findPlatformBreakout(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tradeDate,
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "20") int pageSize
+    ) {
+        return Result.success("操作成功", platformBreakoutService.findByTradeDate(tradeDate, pageNum, pageSize));
+    }
 
     /** 查询指定交易日的三类成交额异动股票，每类最多五只。 */
     @Operation(summary = "查询科技股成交额异动", description = "tradeDate必填；使用当前科技成分股查询指定交易日日线，不回退日期。每类先按当日涨幅选前五，再按成交额降序展示。")

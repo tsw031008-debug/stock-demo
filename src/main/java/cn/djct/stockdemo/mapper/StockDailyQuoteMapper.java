@@ -3,7 +3,6 @@ package cn.djct.stockdemo.mapper;
 import cn.djct.stockdemo.pojo.dto.MarketTurnoverRecordDto;
 import cn.djct.stockdemo.pojo.dto.StockClosePriceDto;
 import cn.djct.stockdemo.pojo.dto.StockTurnoverByDateDto;
-import cn.djct.stockdemo.pojo.dto.TechnologyStockQuoteDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -52,18 +51,6 @@ public interface StockDailyQuoteMapper {
     );
 
     /**
-     * 批量查询候选股票在指定交易日的榜单计算原始行情。
-     *
-     * @param stockCodes 候选股票代码
-     * @param tradeDates 目标交易日
-     * @return 股票日行情原始数据
-     */
-    List<TechnologyStockQuoteDto> selectTechnologyStockQuotes(
-            @Param("stockCodes") List<String> stockCodes,
-            @Param("tradeDates") List<LocalDate> tradeDates
-    );
-
-    /**
      * 查询指定交易日用于板块计算的股票行情原始数据。
      *
      * @param tradeDate 交易日
@@ -89,4 +76,13 @@ public interface StockDailyQuoteMapper {
      * @return  插入或更新的行数
      */
     int upsertBatch(@Param("list") List<StockDailyQuote> quotes);
+
+    /** 按代码批次和明确的交易日列表读取原始行情，按代码、日期升序返回。 */
+    List<StockDailyQuote> selectByStockCodesAndTradeDates(
+            @Param("stockCodes") List<String> stockCodes,
+            @Param("tradeDates") List<LocalDate> tradeDates
+    );
+
+    /** 定位指定股票已有历史的最早交易日，用于区分窗口前端缺失与历史不足。 */
+    LocalDate selectFirstQuoteDate(@Param("stockCode") String stockCode);
 }

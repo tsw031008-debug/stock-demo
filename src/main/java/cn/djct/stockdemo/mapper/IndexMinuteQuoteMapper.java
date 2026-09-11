@@ -14,14 +14,6 @@ import java.util.List;
 public interface IndexMinuteQuoteMapper {
 
     /**
-     * 插入或更新一条指数分钟行情。
-     *
-     * @param quote 指数分钟行情
-     * @return 影响行数
-     */
-    int upsert(@Param("quote") IndexMinuteQuote quote);
-
-    /**
      * 批量插入或更新指数分钟行情。
      *
      * @param quotes 指数分钟行情列表

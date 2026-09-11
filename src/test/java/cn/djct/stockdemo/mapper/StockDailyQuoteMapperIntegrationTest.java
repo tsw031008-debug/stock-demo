@@ -1,9 +1,8 @@
 package cn.djct.stockdemo.mapper;
 
-import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.pojo.dto.StockClosePriceDto;
 import cn.djct.stockdemo.pojo.dto.StockTurnoverByDateDto;
-import cn.djct.stockdemo.pojo.dto.TechnologyStockQuoteDto;
+import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -49,14 +48,18 @@ class StockDailyQuoteMapperIntegrationTest {
         assertEquals(2, stockDailyQuoteMapper.countByTradeDate(tradeDate));
         assertEquals(0, new BigDecimal("10.50").compareTo(closePrice));
 
-        List<TechnologyStockQuoteDto> technologyQuotes = stockDailyQuoteMapper
-                .selectTechnologyStockQuotes(
+        List<StockDailyQuote> technologyQuotes = stockDailyQuoteMapper
+                .selectByStockCodesAndTradeDates(
                         List.of("600000"),
                         List.of(tradeDate)
                 );
         assertEquals(1, technologyQuotes.size());
         assertEquals("600000", technologyQuotes.get(0).getStockCode());
         assertEquals("浦发银行", technologyQuotes.get(0).getStockName());
+        assertEquals("COMPLETE", technologyQuotes.get(0).getDataStatus());
+        assertEquals(0, new BigDecimal("11.50").compareTo(technologyQuotes.get(0).getHighPrice()));
+        assertEquals(0, new BigDecimal("9.50").compareTo(technologyQuotes.get(0).getLowPrice()));
+        assertEquals(0, new BigDecimal("10.50").compareTo(technologyQuotes.get(0).getOpenPrice()));
         assertEquals(0, new BigDecimal("10.50").compareTo(
                 technologyQuotes.get(0).getClosePrice()
         ));
@@ -80,6 +83,11 @@ class StockDailyQuoteMapperIntegrationTest {
         assertEquals(0, new BigDecimal("10.50").compareTo(result.get(0).getClosePrice()));
         assertEquals(firstDate, result.get(1).getTradeDate());
         assertEquals(tradeDate, stockDailyQuoteMapper.selectLatestTradeDate());
+        assertEquals(firstDate, stockDailyQuoteMapper.selectFirstQuoteDate("600000"));
+        List<StockDailyQuote> history = stockDailyQuoteMapper.selectByStockCodesAndTradeDates(
+                List.of("600000"), List.of(secondDate, firstDate));
+        assertEquals(List.of(firstDate, secondDate), history.stream().map(StockDailyQuote::getTradeDate).toList());
+        assertEquals(List.of("600000", "600000"), history.stream().map(StockDailyQuote::getStockCode).toList());
 
         List<StockTurnoverByDateDto> turnovers = stockDailyQuoteMapper
                 .selectTurnoversByTradeDates(
@@ -102,6 +110,9 @@ class StockDailyQuoteMapperIntegrationTest {
                 .stockName(stockName)
                 .tradeDate(tradeDate)
                 .closePrice(new BigDecimal(closePrice))
+                .openPrice(new BigDecimal(closePrice))
+                .highPrice(new BigDecimal(closePrice).add(BigDecimal.ONE))
+                .lowPrice(new BigDecimal(closePrice).subtract(BigDecimal.ONE))
                 .turnoverAmountYuan(new BigDecimal(closePrice).multiply(new BigDecimal("100000000")))
                 .changePercent(new BigDecimal("5.25"))
                 .dataSource("TENCENT")

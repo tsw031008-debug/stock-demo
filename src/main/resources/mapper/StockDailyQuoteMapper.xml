@@ -51,29 +51,7 @@
         ORDER BY trade_date DESC, stock_code ASC
     </select>
 
-    <!--按候选股票和目标交易日批量查询科技股榜单计算所需的原始行情。-->
-    <select id="selectTechnologyStockQuotes"
-            resultType="cn.djct.stockdemo.pojo.dto.TechnologyStockQuoteDto">
-        SELECT
-            stock_code,
-            stock_name,
-            trade_date,
-            close_price,
-            turnover_amount_yuan,
-            change_percent
-        FROM stock_daily_quote
-        WHERE stock_code IN
-            <foreach collection="stockCodes" item="stockCode" open="(" separator="," close=")">
-                #{stockCode}
-            </foreach>
-          AND trade_date IN
-            <foreach collection="tradeDates" item="tradeDate" open="(" separator="," close=")">
-                #{tradeDate}
-            </foreach>
-        ORDER BY stock_code, trade_date
-    </select>
-
-    <!--查询指定交易日用于板块计算的股票行情原始数据。-->
+<!--查询指定交易日用于板块计算的股票行情原始数据。-->
     <select id="selectForPlateCalculation"
             resultType="cn.djct.stockdemo.pojo.entity.StockDailyQuote">
         SELECT
@@ -190,4 +168,21 @@
             collected_at = VALUES(collected_at),
             updated_at = CURRENT_TIMESTAMP
     </insert>
+
+    <!--按候选代码批次读取计算及查询所需的原始日线，不在SQL中计算指标。-->
+    <select id="selectByStockCodesAndTradeDates" resultType="cn.djct.stockdemo.pojo.entity.StockDailyQuote">
+        SELECT stock_code, stock_name, trade_date, open_price, high_price, low_price,
+               close_price, change_percent, turnover_amount_yuan, data_status
+        FROM stock_daily_quote
+        WHERE stock_code IN
+        <foreach collection="stockCodes" item="code" open="(" close=")" separator=",">#{code}</foreach>
+        AND trade_date IN
+        <foreach collection="tradeDates" item="date" open="(" close=")" separator=",">#{date}</foreach>
+        ORDER BY stock_code, trade_date
+    </select>
+
+    <!--最早记录仅用于历史完整性定位，不作为股票上市日期。-->
+    <select id="selectFirstQuoteDate" resultType="java.time.LocalDate">
+        SELECT MIN(trade_date) FROM stock_daily_quote WHERE stock_code = #{stockCode}
+    </select>
 </mapper>

@@ -1,12 +1,16 @@
 # 项目当前进度
 
-最后更新：2026-09-08
+最后更新：2026-09-11
 
 ## 当前阶段
 
-项目处于第一阶段基础能力建设，采用 Spring Boot 模块化单体架构。当前已完成交易日历、股票基础信息、股票日行情、近两年历史日线回补、资金流向每日同步与历史回补、市场水位、股票预警，以及试用期功能5至功能13的代码实现。
+项目处于第一阶段基础能力建设，采用 Spring Boot 模块化单体架构。当前已完成交易日历、股票基础信息、股票日行情、近两年历史日线回补、资金流向每日同步与历史回补、市场水位、股票预警，以及试用期功能5至功能13和功能14平台突破的代码实现。
 
 ## 已完成
+
+- 完成功能14平台突破：交易日15:15按全市场快照分批筛选，MA30＞MA60、最近10日存在收盘价低于当日MA10、严格上穿T-25至T-5含两端同一个平台最高价、收盘价处于含今日200日最高价的90%至110%区间。
+- 新增V17选股结果及完成记录表；按当前单机部署要求使用Java锁串行执行，事务内原子替换结果，失败回滚保留之前成功结果，区分成功零入选和未成功执行。
+- 新增 `GET /api/stockAlert/platformBreakout`，日期必填，股票代码升序分页，返回指定日期行情和3/5/10日涨幅；OpenAPI及推进记录已同步。
 
 - 完成 Spring Boot 3.0.2、JDK 17、MyBatis-Plus、MySQL、Redis 等基础配置。
 - 明确所有 SQL 写在 MyBatis XML 中，不使用 SQL 注解。
@@ -367,6 +371,8 @@ GET /api/stockAlert/technologyStocks
 
 ## 已知限制
 
+- 平台突破V17尚未应用到真实MySQL；已完成H2 MySQL模式集成测试，真实全市场15:15任务仍待验证。当前仅支持单机锁，不考虑多实例部署。强势股回调和强势趋势突破未实现，文档第四种策略仍未提供。
+
 - 当前交易日判断以国家节假日和周末为基础，尚未处理交易所临时休市。
 - 当前初始化策略不支持对已有日期范围进行覆盖更新。
 - Flyway 已引入但默认关闭，表结构暂时由人工维护。
@@ -406,6 +412,22 @@ GET /api/stockAlert/technologyStocks
 5. 在交易日09:30后调用涨速预警和开板提醒接口，核对首次刷新耗时、60秒快照复用和返回条件。
 
 ## 最近推进记录
+
+- [2026-09-11-070-platform-history-skip.md](2026-09-11-070-platform-history-skip.md)：平台突破遇单只股票历史缺口或价格无效时记录并跳过，正常股票继续筛选；当日数据就绪检查和数据库事务失败处理保留。
+
+- [2026-09-11-069-mapper-responsibilities-and-query-reuse.md](2026-09-11-069-mapper-responsibilities-and-query-reuse.md)：拆分普通及自定义板块成员Mapper，统一按股票代码与日期查询日线，合并分钟行情单条和批量写入；选股规则、表结构和接口不变。
+
+- [2026-09-11-068-selection-mapper-responsibilities.md](2026-09-11-068-selection-mapper-responsibilities.md)：选股完成记录和结果拆为独立Mapper，历史日线查询归回StockDailyQuoteMapper，由Service编排。
+
+- [2026-09-10-067-platform-task-lock.md](2026-09-10-067-platform-task-lock.md)：进一步简化为定时入口synchronized加锁、Service使用@Transactional，删除手动事务代码。
+
+- [2026-09-10-066-platform-single-instance-lock.md](2026-09-10-066-platform-single-instance-lock.md)：按当前单机运行要求改用Java锁，移除lockRun SQL，保留结果事务及完成记录。
+
+- [2026-09-10-065-platform-breakout-query-parameters.md](2026-09-10-065-platform-breakout-query-parameters.md)：按用户要求简化平台突破查询，直接接收日期与分页参数，移除DTO绑定和BindingResult；保留原有筛选与分页规则。完整回归303项通过。
+
+- [2026-09-10-064-platform-breakout.md](2026-09-10-064-platform-breakout.md)
+
+- 平台突破完整回归302项通过，失败0、错误0、跳过0；V17目标MySQL迁移及真实盘后验证待执行。
 
 - 已按用户授权完成其他模块同形DTO/VO合并，删除20份重复DTO与机械转换；保留真实字段隐藏和日期类型转换。最终完整回归268项通过，失败0、错误0、跳过0，详见063记录。
 

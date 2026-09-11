@@ -50,12 +50,12 @@ class IndexMinuteQuoteSyncServiceImplTest {
         IndexMinuteQuote quote = quote(triggerTime.withSecond(45));
         when(tradeCalendarService.isTradingDay(TRADE_DATE)).thenReturn(true);
         when(indexMinuteQuoteSourceService.fetchShanghaiComposite()).thenReturn(quote);
-        when(indexMinuteQuoteMapper.upsert(quote)).thenReturn(1);
+        when(indexMinuteQuoteMapper.upsertBatch(List.of(quote))).thenReturn(1);
 
         assertEquals(1, indexMinuteQuoteSyncService.synchronize(triggerTime));
 
         assertEquals(triggerTime.withSecond(0), quote.getQuoteTime());
-        verify(indexMinuteQuoteMapper).upsert(quote);
+        verify(indexMinuteQuoteMapper).upsertBatch(List.of(quote));
     }
 
     @ParameterizedTest
@@ -67,7 +67,7 @@ class IndexMinuteQuoteSyncServiceImplTest {
 
         verify(tradeCalendarService, never()).isTradingDay(TRADE_DATE);
         verify(indexMinuteQuoteSourceService, never()).fetchShanghaiComposite();
-        verify(indexMinuteQuoteMapper, never()).upsert(org.mockito.ArgumentMatchers.any());
+        verify(indexMinuteQuoteMapper, never()).upsertBatch(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
@@ -92,7 +92,7 @@ class IndexMinuteQuoteSyncServiceImplTest {
                 () -> indexMinuteQuoteSyncService.synchronize(triggerTime)
         );
 
-        verify(indexMinuteQuoteMapper, never()).upsert(org.mockito.ArgumentMatchers.any());
+        verify(indexMinuteQuoteMapper, never()).upsertBatch(org.mockito.ArgumentMatchers.any());
     }
 
     @Test

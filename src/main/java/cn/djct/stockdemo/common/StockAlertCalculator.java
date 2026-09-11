@@ -171,7 +171,7 @@ public class StockAlertCalculator {
     /**
      * 计算当前价相对历史收盘价的涨幅百分比。
      */
-    private BigDecimal calculateGain(BigDecimal currentPrice, BigDecimal historicalPrice) {
+    public BigDecimal calculateGain(BigDecimal currentPrice, BigDecimal historicalPrice) {
         // 涨幅=(当前价/历史收盘价-1)*100%
         return currentPrice.divide(historicalPrice, CALCULATION_SCALE, RoundingMode.HALF_UP)
                 .subtract(BigDecimal.ONE)

@@ -81,6 +81,8 @@ logging:
 
 stock:
   alert:
+    platform-breakout:
+      enabled: ${PLATFORM_BREAKOUT_ENABLED:true}
     technology:
       source:
         url: ${TECHNOLOGY_STOCK_POOL_SOURCE_URL:http://test46.szdjct.com/exponent/manage/plate/getStockByPlateId?plateId=676}

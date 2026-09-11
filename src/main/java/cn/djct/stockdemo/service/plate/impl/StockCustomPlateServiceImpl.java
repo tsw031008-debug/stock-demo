@@ -3,6 +3,7 @@ package cn.djct.stockdemo.service.plate.impl;
 import cn.djct.stockdemo.constant.StockCustomCategory;
 import cn.djct.stockdemo.mapper.StockBasicMapper;
 import cn.djct.stockdemo.mapper.StockCustomPlateMapper;
+import cn.djct.stockdemo.mapper.StockCustomPlateMemberMapper;
 import cn.djct.stockdemo.pojo.vo.PageRespVo;
 import cn.djct.stockdemo.pojo.vo.StockCustomCategoryRespVo;
 import cn.djct.stockdemo.pojo.vo.StockCustomPlateRespVo;
@@ -35,6 +36,7 @@ public class StockCustomPlateServiceImpl implements StockCustomPlateService {
     private static final int MEMBER_BATCH_SIZE = 500;
 
     private final StockCustomPlateMapper stockCustomPlateMapper;
+    private final StockCustomPlateMemberMapper stockCustomPlateMemberMapper;
     private final StockBasicMapper stockBasicMapper;
 
     /**
@@ -96,13 +98,13 @@ public class StockCustomPlateServiceImpl implements StockCustomPlateService {
         // 校验页码和页大小
         validatePage(pageNum, pageSize);
         // 查询有效成分股数量
-        int total = stockCustomPlateMapper.countActiveMembers(plateId);
+        int total = stockCustomPlateMemberMapper.countActiveMembers(plateId);
         int offset = (pageNum - 1) * pageSize;
         return PageRespVo.<StockCustomPlateMemberRespVo>builder()
                 .pageNum(pageNum)
                 .pageSize(pageSize)
                 .total(total)
-                .records(stockCustomPlateMapper.selectActiveMembers(plateId, offset, pageSize))
+                .records(stockCustomPlateMemberMapper.selectActiveMembers(plateId, offset, pageSize))
                 .build();
     }
 
@@ -169,7 +171,7 @@ public class StockCustomPlateServiceImpl implements StockCustomPlateService {
             throw new IllegalStateException("自定义子板块更新失败，plateId=" + plateId);
         }
         // 本接口是全量更新：先失效原有关系，再写入本次提交的完整成员列表
-        stockCustomPlateMapper.deactivateMembers(plateId);
+        stockCustomPlateMemberMapper.deactivateMembers(plateId);
         saveMembers(plateId, actualCodes);
         return toDto(plate);
     }
@@ -185,7 +187,7 @@ public class StockCustomPlateServiceImpl implements StockCustomPlateService {
         // 校验子板块存在且未被软删除
         requireActivePlate(plateId);
         // 删除成分股关系
-        stockCustomPlateMapper.deactivateMembers(plateId);
+        stockCustomPlateMemberMapper.deactivateMembers(plateId);
         // 软删除子板块
         if (stockCustomPlateMapper.deactivate(plateId) != 1) {
             throw new IllegalStateException("自定义子板块删除失败，plateId=" + plateId);
@@ -199,7 +201,7 @@ public class StockCustomPlateServiceImpl implements StockCustomPlateService {
      */
     @Override
     public List<StockCustomPlateMemberRelationDto> findActiveMemberRelations() {
-        return stockCustomPlateMapper.selectActiveMemberRelations();
+        return stockCustomPlateMemberMapper.selectActiveMemberRelations();
     }
 
     /**
@@ -252,7 +254,7 @@ public class StockCustomPlateServiceImpl implements StockCustomPlateService {
                             .active(true)
                             .build())
                     .toList();
-            stockCustomPlateMapper.upsertMemberBatch(members);
+            stockCustomPlateMemberMapper.upsertMemberBatch(members);
         }
     }
 

@@ -36,6 +36,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class TradeCalendarControllerTest {
 
     @MockBean
+    private cn.djct.stockdemo.mapper.StockSelectionResultMapper stockSelectionResultMapper;
+
+    @MockBean
+    private cn.djct.stockdemo.mapper.StockSelectionRunMapper stockSelectionRunMapper;
+
+    @MockBean
     private IndexDailyQuoteMapper indexDailyQuoteMapper;
 
     @MockBean
@@ -57,6 +63,8 @@ class TradeCalendarControllerTest {
     private StockBasicMapper stockBasicMapper;
     @MockBean
     private StockCustomPlateMapper stockCustomPlateMapper;
+    @MockBean
+    private cn.djct.stockdemo.mapper.StockCustomPlateMemberMapper stockCustomPlateMemberMapper;
 
     @MockBean
     private StockDailyQuoteMapper stockDailyQuoteMapper;
@@ -65,6 +73,8 @@ class TradeCalendarControllerTest {
     private StockFundFlowMapper stockFundFlowMapper;
     @MockBean
     private StockPlateMapper stockPlateMapper;
+    @MockBean
+    private cn.djct.stockdemo.mapper.StockPlateMemberMapper stockPlateMemberMapper;
     @MockBean
     private StockPlateDailyQuoteMapper stockPlateDailyQuoteMapper;
     @MockBean

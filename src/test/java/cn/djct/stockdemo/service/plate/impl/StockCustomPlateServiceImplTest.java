@@ -2,6 +2,7 @@ package cn.djct.stockdemo.service.plate.impl;
 
 import cn.djct.stockdemo.mapper.StockBasicMapper;
 import cn.djct.stockdemo.mapper.StockCustomPlateMapper;
+import cn.djct.stockdemo.mapper.StockCustomPlateMemberMapper;
 import cn.djct.stockdemo.pojo.vo.StockCustomPlateRespVo;
 import cn.djct.stockdemo.pojo.dto.StockCustomPlateSaveDto;
 import cn.djct.stockdemo.pojo.entity.StockBasic;
@@ -29,6 +30,8 @@ class StockCustomPlateServiceImplTest {
     @Mock
     private StockCustomPlateMapper stockCustomPlateMapper;
     @Mock
+    private StockCustomPlateMemberMapper stockCustomPlateMemberMapper;
+    @Mock
     private StockBasicMapper stockBasicMapper;
 
     private StockCustomPlateServiceImpl service;
@@ -36,7 +39,7 @@ class StockCustomPlateServiceImplTest {
     @BeforeEach
     void setUp() {
         service = new StockCustomPlateServiceImpl(
-                stockCustomPlateMapper,
+                stockCustomPlateMapper, stockCustomPlateMemberMapper,
                 stockBasicMapper
         );
     }
@@ -63,7 +66,7 @@ class StockCustomPlateServiceImplTest {
         assertEquals("核心金融", result.getPlateName());
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<StockCustomPlateMember>> captor = ArgumentCaptor.forClass(List.class);
-        verify(stockCustomPlateMapper).upsertMemberBatch(captor.capture());
+        verify(stockCustomPlateMemberMapper).upsertMemberBatch(captor.capture());
         assertEquals(List.of("000001", "600000"), captor.getValue().stream()
                 .map(StockCustomPlateMember::getStockCode)
                 .toList());

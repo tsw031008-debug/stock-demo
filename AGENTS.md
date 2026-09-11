@@ -125,6 +125,7 @@ plan/                   # 项目推进记录和当前状态
 - 定时任务类放在 `task`，复杂计算和操作放在 `face`，禁止在 Task 中堆积业务实现。
 - REST 接口路径的每个路径段使用 lowerCamelCase，例如 `/api/tradeCalendar/previousTradingDay`；禁止使用连字符或下划线分隔单词。
 - 优先使用构造器注入，禁止字段注入。
+- 注入的依赖字段及对应构造器参数使用完整类型名的 lowerCamelCase 形式，保留业务前缀，不使用 `mapper`、`service`、`calculator` 等泛称或缩写。例如 `PlatformBreakoutCalculator platformBreakoutCalculator`、`StockDailyQuoteMapper stockDailyQuoteMapper`；测试中的对应依赖也遵循此规则。
 - 使用明确的请求DTO、响应VO和领域对象，禁止直接把数据库实体作为请求参数或公共API响应。
 - 公共接口中的日期使用 `LocalDate`，分钟时间使用 `LocalDateTime`；明确采用 `Asia/Shanghai` 时区。
 - 金额、价格、比例和指标计算使用 `BigDecimal`；禁止用 `double` 直接存储或比较金融数据。
@@ -137,6 +138,13 @@ plan/                   # 项目推进记录和当前状态
 - 全部源文件使用 UTF-8 编码。
 
 # 数据访问规范
+
+- 默认一张表对应一个 Mapper，Mapper 名称体现所负责的表；禁止将多张表各自独立的增删改查集中到一个业务功能 Mapper 中。例如板块与板块成分关系分别由 `StockPlateMapper`、`StockPlateMemberMapper` 负责。
+- 跨表业务编排和事务由 Service 负责，通过调用各表对应的 Mapper 完成；不能为了减少 Service 依赖而混合 Mapper 职责。
+- 确需关联查询时，SQL 放在主要查询结果所属的 Mapper 中，允许关联其他表获取字段或筛选条件；不要为了机械满足一表一 Mapper 将合理关联查询拆成多次请求。
+- 新增 Mapper 方法前，必须检查现有 Mapper 的查询条件、返回字段、排序和状态过滤是否可复用。相同数据访问语义优先复用已有方法；字段不足时评估补充字段并统一返回类型，禁止仅因业务功能不同复制近似 SQL 或重复创建传输对象。
+- Mapper 方法按数据访问含义命名，明确查询条件，避免用调用它的业务功能命名通用查询。例如按股票代码和交易日期查询日线使用 `selectByStockCodesAndTradeDates`，不命名为 `selectTechnologyStockQuotes` 或含义模糊的 `selectQuotes`。
+- 查询范围、状态过滤、排序或必要字段确有差异的方法可以保留，并在注释中说明用途；不为追求方法数量少而合并成复杂的万能查询。合并重复方法时同步更新调用方、XML和测试，删除本次修改产生的废弃方法及对象。
 
 - 所有 SQL 必须写在 `src/main/resources/mapper/` 下的 MyBatis XML 文件中，包括简单 CRUD 和复杂聚合查询。
 - 查询 SQL 只负责筛选并返回业务计算所需的数据，禁止在 SQL 中使用 `SUM`、`AVG`、`ROUND`、`CASE`、`GROUP BY` 等实现业务汇总、指标公式或业务分类；相关计算统一放在 Service 或可独立测试的计算组件中。

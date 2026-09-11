@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.djct.stockdemo.mapper.StockSelectionResultMapper">
+    <!--仅替换指定日期和策略，清除重算后不再入选的旧股票。-->
+    <delete id="deleteResults">
+        DELETE FROM stock_selection_result
+        WHERE trade_date = #{tradeDate} AND strategy_type = #{strategyType}
+    </delete>
+
+    <!--批量保存入选时股票名称，唯一键防止同日同策略重复。-->
+    <insert id="insertResults">
+        INSERT INTO stock_selection_result (trade_date, strategy_type, stock_code, stock_name)
+        VALUES
+        <foreach collection="stocks" item="stock" separator=",">
+            (#{tradeDate}, #{strategyType}, #{stock.stockCode}, #{stock.stockName})
+        </foreach>
+    </insert>
+
+    <!--分页总数来自选股结果，不能因行情缺失静默减少入选数量。-->
+    <select id="countResults" resultType="long">
+        SELECT COUNT(*) FROM stock_selection_result
+        WHERE trade_date = #{tradeDate} AND strategy_type = #{strategyType}
+    </select>
+
+    <!--查询指定日期行情；左连接保留行情缺失的入选记录供Service报错，按代码稳定分页。-->
+    <select id="selectPage" resultType="cn.djct.stockdemo.pojo.vo.LeftSideStockRespVo">
+        SELECT r.stock_code, r.stock_name, q.open_price, q.high_price, q.low_price,
+               q.close_price, q.change_percent, q.turnover_amount_yuan
+        FROM stock_selection_result r
+        LEFT JOIN stock_daily_quote q ON q.stock_code = r.stock_code AND q.trade_date = r.trade_date
+        WHERE r.trade_date = #{tradeDate} AND r.strategy_type = #{strategyType}
+        ORDER BY r.stock_code
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+</mapper>

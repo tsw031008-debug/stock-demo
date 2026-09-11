@@ -26,10 +26,10 @@ class TechnologyStockTurnoverServiceImplTest {
         var dates = prepare();
         var result = TechnologyStockTurnoverRespVo.builder().statisticsDate(date).build();
         when(source.fetchStockCodes()).thenReturn(List.of("000001"));
-        when(mapper.selectTechnologyStockQuotes(List.of("000001"), dates)).thenReturn(List.of());
+        when(mapper.selectByStockCodesAndTradeDates(List.of("000001"), dates)).thenReturn(List.of());
         when(calculator.calculate(dates, List.of())).thenReturn(result);
         assertSame(result, service.findByTradeDate(date));
-        verify(mapper).selectTechnologyStockQuotes(List.of("000001"), dates);
+        verify(mapper).selectByStockCodesAndTradeDates(List.of("000001"), dates);
         verify(mapper, never()).selectLatestTradeDate();
     }
 

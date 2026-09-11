@@ -76,7 +76,7 @@ public class IndexMinuteQuoteSyncServiceImpl implements IndexMinuteQuoteSyncServ
         // 设置交易日
         quote.setTradeDate(quoteMinute.toLocalDate());
         quote.setQuoteTime(quoteMinute);
-        return indexMinuteQuoteMapper.upsert(quote);
+        return indexMinuteQuoteMapper.upsertBatch(List.of(quote));
     }
 
     /**

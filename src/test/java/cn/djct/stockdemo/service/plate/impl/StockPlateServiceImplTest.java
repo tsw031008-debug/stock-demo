@@ -1,6 +1,7 @@
 package cn.djct.stockdemo.service.plate.impl;
 
 import cn.djct.stockdemo.mapper.StockPlateMapper;
+import cn.djct.stockdemo.mapper.StockPlateMemberMapper;
 import cn.djct.stockdemo.pojo.dto.StockPlateSourceDto;
 import cn.djct.stockdemo.pojo.entity.StockPlate;
 import cn.djct.stockdemo.pojo.entity.StockPlateMember;
@@ -25,6 +26,8 @@ class StockPlateServiceImplTest {
 
     @Mock
     private StockPlateMapper stockPlateMapper;
+    @Mock
+    private StockPlateMemberMapper stockPlateMemberMapper;
 
     private AutoCloseable mocks;
 
@@ -56,16 +59,16 @@ class StockPlateServiceImplTest {
         ));
         when(stockPlateMapper.countActivePlates(StockPlateServiceImpl.DATA_SOURCE, TRADE_DATE))
                 .thenReturn(2);
-        when(stockPlateMapper.countActiveMembers(StockPlateServiceImpl.DATA_SOURCE, TRADE_DATE))
+        when(stockPlateMemberMapper.countActiveMembers(StockPlateServiceImpl.DATA_SOURCE, TRADE_DATE))
                 .thenReturn(3);
-        StockPlateServiceImpl service = new StockPlateServiceImpl(stockPlateMapper);
+        StockPlateServiceImpl service = new StockPlateServiceImpl(stockPlateMapper, stockPlateMemberMapper);
 
         int result = service.saveSnapshot(TRADE_DATE, source);
 
         assertEquals(2, result);
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<StockPlateMember>> captor = ArgumentCaptor.forClass(List.class);
-        verify(stockPlateMapper, atLeastOnce()).upsertMemberBatch(captor.capture());
+        verify(stockPlateMemberMapper, atLeastOnce()).upsertMemberBatch(captor.capture());
         assertEquals(3, captor.getAllValues().stream().mapToInt(List::size).sum());
     }
 }

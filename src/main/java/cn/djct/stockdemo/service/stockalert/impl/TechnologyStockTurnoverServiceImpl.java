@@ -50,6 +50,6 @@ public class TechnologyStockTurnoverServiceImpl implements TechnologyStockTurnov
         }
         //根据日期和候选池获取日线数据计算
         return calculator.calculate(dates,
-                stockDailyQuoteMapper.selectTechnologyStockQuotes(codes, dates));
+                stockDailyQuoteMapper.selectByStockCodesAndTradeDates(codes, dates));
     }
 }

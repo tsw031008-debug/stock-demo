@@ -19,39 +19,7 @@
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
-    <!--插入或更新一条指数分钟行情。-->
-    <insert id="upsert">
-        INSERT INTO index_minute_quote (
-            index_code,
-            index_name,
-            trade_date,
-            quote_time,
-            current_price,
-            previous_close_price,
-            data_source,
-            collected_at
-        )
-        VALUES (
-            #{quote.indexCode},
-            #{quote.indexName},
-            #{quote.tradeDate},
-            #{quote.quoteTime},
-            #{quote.currentPrice},
-            #{quote.previousClosePrice},
-            #{quote.dataSource},
-            #{quote.collectedAt}
-        )
-        ON DUPLICATE KEY UPDATE
-            index_name = VALUES(index_name),
-            trade_date = VALUES(trade_date),
-            current_price = VALUES(current_price),
-            previous_close_price = VALUES(previous_close_price),
-            data_source = VALUES(data_source),
-            collected_at = VALUES(collected_at),
-            updated_at = CURRENT_TIMESTAMP
-    </insert>
-
-    <!--批量幂等补录缺失的指数分钟行情。-->
+<!--批量幂等保存指数分钟行情，单条采集及缺失补录共用。-->
     <insert id="upsertBatch">
         INSERT INTO index_minute_quote (
             index_code,

@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.common;
 
-import cn.djct.stockdemo.pojo.dto.TechnologyStockQuoteDto;
+import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.pojo.vo.TechnologyStockRankRespVo;
 import cn.djct.stockdemo.pojo.vo.TechnologyStockTurnoverRespVo;
 import org.springframework.stereotype.Component;
@@ -23,7 +23,7 @@ public class TechnologyStockTurnoverCalculator {
     private static final int RANKING_LIMIT = 5;
 
     /** dates按T、T-1、T-2、T-3排列，三类独立；历史缺失只影响依赖它的分类。 */
-    public TechnologyStockTurnoverRespVo calculate(List<LocalDate> dates, List<TechnologyStockQuoteDto> quotes) {
+    public TechnologyStockTurnoverRespVo calculate(List<LocalDate> dates, List<StockDailyQuote> quotes) {
         if (dates == null || dates.size() != 4 || dates.stream().anyMatch(java.util.Objects::isNull)) {
             throw new IllegalArgumentException("必须提供T至T-3四个交易日");
         }
@@ -31,9 +31,9 @@ public class TechnologyStockTurnoverCalculator {
         if (quotes == null) {
             throw new IllegalStateException("股票日行情查询结果为空");
         }
-        Map<String, Map<LocalDate, TechnologyStockQuoteDto>> byStock = new HashMap<>();
+        Map<String, Map<LocalDate, StockDailyQuote>> byStock = new HashMap<>();
         //按照股票代码分组
-        for (TechnologyStockQuoteDto quote : quotes) {
+        for (StockDailyQuote quote : quotes) {
             if (quote == null || quote.getStockCode() == null || quote.getStockCode().isBlank()
                     || quote.getTradeDate() == null || !dates.contains(quote.getTradeDate())) {
                 throw new IllegalStateException("股票日行情代码或日期无效");
@@ -44,12 +44,12 @@ public class TechnologyStockTurnoverCalculator {
                 throw new IllegalStateException("存在重复股票日行情");
             }
         }
-        List<TechnologyStockQuoteDto> increasing = new ArrayList<>();
-        List<TechnologyStockQuoteDto> institutional = new ArrayList<>();
-        List<TechnologyStockQuoteDto> abnormal = new ArrayList<>();
+        List<StockDailyQuote> increasing = new ArrayList<>();
+        List<StockDailyQuote> institutional = new ArrayList<>();
+        List<StockDailyQuote> abnormal = new ArrayList<>();
         //遍历每只股票的行情
-        for (Map<LocalDate, TechnologyStockQuoteDto> daily : byStock.values()) {
-            TechnologyStockQuoteDto current = daily.get(dates.get(0));
+        for (Map<LocalDate, StockDailyQuote> daily : byStock.values()) {
+            StockDailyQuote current = daily.get(dates.get(0));
             //去除无效数据 涨幅大于0，成交额大于1亿元
             if (current == null || current.getStockName() == null || current.getStockName().isBlank()
                     || current.getStockName().contains("ST")
@@ -59,7 +59,7 @@ public class TechnologyStockTurnoverCalculator {
                 continue;
             }
             //获取前一日行情
-            TechnologyStockQuoteDto previous = daily.get(dates.get(1));
+            StockDailyQuote previous = daily.get(dates.get(1));
             //判断是否为统计日和前一日的涨幅是否超过5%
             if (exceeds(current, previous, GROWTH_MULTIPLIER)) {
                 if (exceeds(previous, daily.get(dates.get(2)), GROWTH_MULTIPLIER)
@@ -83,7 +83,7 @@ public class TechnologyStockTurnoverCalculator {
                 .abnormalStocks(toRanking(abnormal)).build();
     }
 
-    private boolean exceeds(TechnologyStockQuoteDto current, TechnologyStockQuoteDto base,
+    private boolean exceeds(StockDailyQuote current, StockDailyQuote base,
                             BigDecimal multiplier) {
         // 分母必须为正，不能把零成交额解释成无限放量。
         return current != null && current.getTurnoverAmountYuan() != null
@@ -92,18 +92,18 @@ public class TechnologyStockTurnoverCalculator {
                 && current.getTurnoverAmountYuan().compareTo(base.getTurnoverAmountYuan().multiply(multiplier)) > 0;
     }
 
-    private List<TechnologyStockRankRespVo> toRanking(List<TechnologyStockQuoteDto> candidates) {
+    private List<TechnologyStockRankRespVo> toRanking(List<StockDailyQuote> candidates) {
         // 公共条件已保证涨幅为正；先按涨幅取五只，再按成交额重排，不能颠倒。
-        List<TechnologyStockQuoteDto> sorted = candidates.stream()
-                .sorted(Comparator.comparing(TechnologyStockQuoteDto::getChangePercent).reversed()
-                        .thenComparing(TechnologyStockQuoteDto::getStockCode))
+        List<StockDailyQuote> sorted = candidates.stream()
+                .sorted(Comparator.comparing(StockDailyQuote::getChangePercent).reversed()
+                        .thenComparing(StockDailyQuote::getStockCode))
                 .limit(RANKING_LIMIT)
-                .sorted(Comparator.comparing(TechnologyStockQuoteDto::getTurnoverAmountYuan).reversed()
-                        .thenComparing(TechnologyStockQuoteDto::getStockCode))
+                .sorted(Comparator.comparing(StockDailyQuote::getTurnoverAmountYuan).reversed()
+                        .thenComparing(StockDailyQuote::getStockCode))
                 .toList();
         List<TechnologyStockRankRespVo> result = new ArrayList<>(sorted.size());
         for (int i = 0; i < sorted.size(); i++) {
-            TechnologyStockQuoteDto quote = sorted.get(i);
+            StockDailyQuote quote = sorted.get(i);
             result.add(TechnologyStockRankRespVo.builder().rank(i + 1)
                     .stockCode(quote.getStockCode()).stockName(quote.getStockName()).build());
         }

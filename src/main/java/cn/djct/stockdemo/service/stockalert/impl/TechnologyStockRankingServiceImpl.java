@@ -2,7 +2,7 @@ package cn.djct.stockdemo.service.stockalert.impl;
 
 import cn.djct.stockdemo.common.TechnologyStockRankingCalculator;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.TechnologyStockQuoteDto;
+import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.pojo.vo.TechnologyStockRankingRespVo;
 import cn.djct.stockdemo.service.stockalert.TechnologyStockPoolSourceService;
 import cn.djct.stockdemo.service.stockalert.TechnologyStockRankingService;
@@ -57,8 +57,8 @@ public class TechnologyStockRankingServiceImpl implements TechnologyStockRanking
                 sixtyDayBaseDate
         );
         //查询所有成分股的各个交易日的行情数据
-        List<TechnologyStockQuoteDto> quotes = stockDailyQuoteMapper
-                .selectTechnologyStockQuotes(stockCodes, targetDates);
+        List<StockDailyQuote> quotes = stockDailyQuoteMapper
+                .selectByStockCodesAndTradeDates(stockCodes, targetDates);
         return calculator.calculate(
                 statisticsDate,
                 fiveDayBaseDate,

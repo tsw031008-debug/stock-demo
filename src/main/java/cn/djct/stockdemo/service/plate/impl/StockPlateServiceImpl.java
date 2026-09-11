@@ -1,6 +1,7 @@
 package cn.djct.stockdemo.service.plate.impl;
 
 import cn.djct.stockdemo.mapper.StockPlateMapper;
+import cn.djct.stockdemo.mapper.StockPlateMemberMapper;
 import cn.djct.stockdemo.pojo.dto.StockPlateMemberDto;
 import cn.djct.stockdemo.pojo.dto.StockPlateSourceDto;
 import cn.djct.stockdemo.pojo.entity.StockPlate;
@@ -30,6 +31,7 @@ public class StockPlateServiceImpl implements StockPlateService {
     private static final int SAVE_BATCH_SIZE = 500;
 
     private final StockPlateMapper stockPlateMapper;
+    private final StockPlateMemberMapper stockPlateMemberMapper;
 
     /**
      * 判断指定交易日的板块快照是否已经同步。
@@ -98,7 +100,7 @@ public class StockPlateServiceImpl implements StockPlateService {
         saveMemberBatches(members);
 
         // 只有完整快照成功保存后才失效未出现的旧板块和旧成分关系
-        stockPlateMapper.deactivateMembersNotSeen(DATA_SOURCE, tradeDate);
+        stockPlateMemberMapper.deactivateMembersNotSeen(DATA_SOURCE, tradeDate);
         stockPlateMapper.deactivatePlatesNotSeen(DATA_SOURCE, tradeDate);
         validateSavedCounts(tradeDate, plates.size(), members.size());
         return plates.size();
@@ -112,7 +114,7 @@ public class StockPlateServiceImpl implements StockPlateService {
     @Override
     public List<StockPlateMemberDto> findActiveMembers() {
         //同花顺三级概念版块
-        return stockPlateMapper.selectActiveMembers(DATA_SOURCE);
+        return stockPlateMemberMapper.selectActiveMembers(DATA_SOURCE);
     }
 
     /**
@@ -148,7 +150,7 @@ public class StockPlateServiceImpl implements StockPlateService {
     private void saveMemberBatches(List<StockPlateMember> members) {
         for (int startIndex = 0; startIndex < members.size(); startIndex += SAVE_BATCH_SIZE) {
             int endIndex = Math.min(startIndex + SAVE_BATCH_SIZE, members.size());
-            stockPlateMapper.upsertMemberBatch(new ArrayList<>(members.subList(startIndex, endIndex)));
+            stockPlateMemberMapper.upsertMemberBatch(new ArrayList<>(members.subList(startIndex, endIndex)));
         }
     }
 
@@ -157,7 +159,7 @@ public class StockPlateServiceImpl implements StockPlateService {
      */
     private void validateSavedCounts(LocalDate tradeDate, int expectedPlates, int expectedMembers) {
         int actualPlates = stockPlateMapper.countActivePlates(DATA_SOURCE, tradeDate);
-        int actualMembers = stockPlateMapper.countActiveMembers(DATA_SOURCE, tradeDate);
+        int actualMembers = stockPlateMemberMapper.countActiveMembers(DATA_SOURCE, tradeDate);
         if (actualPlates != expectedPlates || actualMembers != expectedMembers) {
             throw new IllegalStateException("板块快照落库数量不一致，expectedPlates="
                     + expectedPlates + "，actualPlates=" + actualPlates

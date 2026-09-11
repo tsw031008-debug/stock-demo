@@ -41,6 +41,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class IndexStyleControllerTest {
 
+    @MockBean
+    private cn.djct.stockdemo.mapper.StockSelectionResultMapper stockSelectionResultMapper;
+
+    @MockBean
+    private cn.djct.stockdemo.mapper.StockSelectionRunMapper stockSelectionRunMapper;
+
     @Autowired
     private MockMvc mockMvc;
     @MockBean
@@ -64,6 +70,8 @@ class IndexStyleControllerTest {
     @MockBean
     private StockPlateMapper stockPlateMapper;
     @MockBean
+    private cn.djct.stockdemo.mapper.StockPlateMemberMapper stockPlateMemberMapper;
+    @MockBean
     private StockPlateDailyQuoteMapper stockPlateDailyQuoteMapper;
     @MockBean
     private IndexMinuteQuoteMapper indexMinuteQuoteMapper;
@@ -73,6 +81,8 @@ class IndexStyleControllerTest {
     private MarketDailyTurnoverMapper marketDailyTurnoverMapper;
     @MockBean
     private StockCustomPlateMapper stockCustomPlateMapper;
+    @MockBean
+    private cn.djct.stockdemo.mapper.StockCustomPlateMemberMapper stockCustomPlateMemberMapper;
 
     @Test
     void shouldReturnFiveDayIndexStyles() throws Exception {

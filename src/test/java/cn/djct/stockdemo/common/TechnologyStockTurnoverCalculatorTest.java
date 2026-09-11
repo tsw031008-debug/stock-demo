@@ -1,5 +1,6 @@
 package cn.djct.stockdemo.common;
 
+import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.pojo.dto.*;
 import cn.djct.stockdemo.pojo.vo.TechnologyStockRankRespVo;
 import org.junit.jupiter.api.Test;
@@ -66,7 +67,7 @@ class TechnologyStockTurnoverCalculatorTest {
 
     @Test
     void shouldSelectByRiseBeforeSortingByTurnover() {
-        List<TechnologyStockQuoteDto> quotes = new ArrayList<>();
+        List<StockDailyQuote> quotes = new ArrayList<>();
         for (int i = 1; i <= 6; i++) {
             var stock = rows("00000" + i, String.valueOf(i + 5), "2", "1.5", "1");
             stock.get(0).setChangePercent(BigDecimal.valueOf(7 - i));
@@ -81,7 +82,7 @@ class TechnologyStockTurnoverCalculatorTest {
 
     @Test
     void shouldBreakTiesByCodeAndReturnEmptyForNoMatches() {
-        List<TechnologyStockQuoteDto> quotes = new ArrayList<>();
+        List<StockDailyQuote> quotes = new ArrayList<>();
         for (int i = 6; i >= 1; i--) quotes.addAll(rows("00000" + i, "6", "2", "1.5", "1"));
         assertEquals(List.of("000001", "000002", "000003", "000004", "000005"),
                 calculator.calculate(dates, quotes).getIncreasingStocks().stream()
@@ -101,10 +102,10 @@ class TechnologyStockTurnoverCalculatorTest {
         assertThrows(IllegalStateException.class, () -> calculator.calculate(dates, quotes));
     }
 
-    private List<TechnologyStockQuoteDto> rows(String code, String... amounts) {
-        List<TechnologyStockQuoteDto> result = new ArrayList<>();
+    private List<StockDailyQuote> rows(String code, String... amounts) {
+        List<StockDailyQuote> result = new ArrayList<>();
         for (int i = 0; i < amounts.length; i++) {
-            result.add(TechnologyStockQuoteDto.builder().stockCode(code).stockName("科技")
+            result.add(StockDailyQuote.builder().stockCode(code).stockName("科技")
                     .tradeDate(dates.get(i)).changePercent(new BigDecimal("3"))
                     .turnoverAmountYuan(amounts[i] == null ? null :
                             new BigDecimal(amounts[i]).multiply(new BigDecimal("100000000"))).build());

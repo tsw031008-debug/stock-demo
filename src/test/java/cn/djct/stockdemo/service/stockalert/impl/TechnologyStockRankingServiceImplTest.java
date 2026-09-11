@@ -2,7 +2,7 @@ package cn.djct.stockdemo.service.stockalert.impl;
 
 import cn.djct.stockdemo.common.TechnologyStockRankingCalculator;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
-import cn.djct.stockdemo.pojo.dto.TechnologyStockQuoteDto;
+import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.pojo.vo.TechnologyStockRankingRespVo;
 import cn.djct.stockdemo.service.stockalert.TechnologyStockPoolSourceService;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
@@ -44,8 +44,8 @@ class TechnologyStockRankingServiceImplTest {
         TechnologyStockRankingServiceImpl service = service();
         List<String> stockCodes = List.of("000001", "600000");
         List<LocalDate> targetDates = targetDates();
-        List<TechnologyStockQuoteDto> quotes = List.of(
-                TechnologyStockQuoteDto.builder()
+        List<StockDailyQuote> quotes = List.of(
+                StockDailyQuote.builder()
                         .stockCode("000001")
                         .tradeDate(STATISTICS_DATE)
                         .build()
@@ -57,7 +57,7 @@ class TechnologyStockRankingServiceImplTest {
                 .thenReturn(STATISTICS_DATE);
         mockTradingDayOffsets();
         when(stockPoolSourceService.fetchStockCodes()).thenReturn(stockCodes);
-        when(stockDailyQuoteMapper.selectTechnologyStockQuotes(stockCodes, targetDates))
+        when(stockDailyQuoteMapper.selectByStockCodesAndTradeDates(stockCodes, targetDates))
                 .thenReturn(quotes);
         when(calculator.calculate(
                 STATISTICS_DATE,
@@ -72,7 +72,7 @@ class TechnologyStockRankingServiceImplTest {
         TechnologyStockRankingRespVo result = service.getLatest();
 
         assertEquals(expected, result);
-        verify(stockDailyQuoteMapper).selectTechnologyStockQuotes(stockCodes, targetDates);
+        verify(stockDailyQuoteMapper).selectByStockCodesAndTradeDates(stockCodes, targetDates);
         verify(stockDailyQuoteMapper).selectLatestTradeDate();
         org.mockito.Mockito.verifyNoMoreInteractions(stockDailyQuoteMapper);
         verify(calculator).calculate(

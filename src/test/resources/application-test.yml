@@ -23,6 +23,9 @@ logging:
     cn.djct.stockdemo: INFO
 
 stock:
+  alert:
+    platform-breakout:
+      enabled: false
   basic:
     sync:
       enabled: false

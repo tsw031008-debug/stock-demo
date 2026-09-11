@@ -41,6 +41,82 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class StockAlertControllerTest {
 
     @Test
+    void shouldReturnPlatformBreakoutWithDefaultsAndAllFields() throws Exception {
+        var record = cn.djct.stockdemo.pojo.vo.LeftSideStockRespVo.builder()
+                .stockCode("000001").stockName("平台股票").openPrice(new BigDecimal("10"))
+                .highPrice(new BigDecimal("12")).lowPrice(new BigDecimal("9"))
+                .closePrice(new BigDecimal("11")).changePercent(new BigDecimal("10"))
+                .turnoverAmountYuan(new BigDecimal("200000000"))
+                .threeDayChangePercent(new BigDecimal("5"))
+                .fiveDayChangePercent(new BigDecimal("8"))
+                .tenDayChangePercent(new BigDecimal("10")).build();
+        when(platformBreakoutService.findByTradeDate(java.time.LocalDate.of(2026, 9, 10), 1, 20))
+                .thenReturn(PageRespVo.<cn.djct.stockdemo.pojo.vo.LeftSideStockRespVo>builder()
+                        .pageNum(1).pageSize(20).total(1).records(List.of(record)).build());
+        mockMvc.perform(get("/api/stockAlert/platformBreakout").param("tradeDate", "2026-09-10"))
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.pageSize").value(20))
+                .andExpect(jsonPath("$.data.records[0].stockCode").value("000001"))
+                .andExpect(jsonPath("$.data.records[0].openPrice").value(10))
+                .andExpect(jsonPath("$.data.records[0].highPrice").value(12))
+                .andExpect(jsonPath("$.data.records[0].lowPrice").value(9))
+                .andExpect(jsonPath("$.data.records[0].closePrice").value(11))
+                .andExpect(jsonPath("$.data.records[0].turnoverAmountYuan").value(200000000))
+                .andExpect(jsonPath("$.data.records[0].threeDayChangePercent").value(5))
+                .andExpect(jsonPath("$.data.records[0].fiveDayChangePercent").value(8))
+                .andExpect(jsonPath("$.data.records[0].tenDayChangePercent").value(10));
+        verify(platformBreakoutService).findByTradeDate(java.time.LocalDate.of(2026, 9, 10), 1, 20);
+    }
+
+    @Test
+    void shouldValidatePlatformParameterBindingBeforeCallingService() throws Exception {
+        mockMvc.perform(get("/api/stockAlert/platformBreakout"))
+                .andExpect(jsonPath("$.message").value("请求参数不能为空：tradeDate"));
+        mockMvc.perform(get("/api/stockAlert/platformBreakout").param("tradeDate", "bad-date"))
+                .andExpect(jsonPath("$.code").value(1000))
+                .andExpect(jsonPath("$.message").value("日期格式必须为yyyy-MM-dd：tradeDate"));
+        mockMvc.perform(get("/api/stockAlert/platformBreakout").param("tradeDate", "2026-09-10").param("pageNum", "abc"))
+                .andExpect(jsonPath("$.message").value("请求参数格式错误：pageNum"));
+        org.mockito.Mockito.verifyNoInteractions(platformBreakoutService);
+    }
+
+    @Test
+    void shouldReportUnavailablePlatformResult() throws Exception {
+        when(platformBreakoutService.findByTradeDate(java.time.LocalDate.of(2026, 9, 10), 1, 20))
+                .thenThrow(new IllegalStateException("该交易日平台突破尚无成功结果"));
+        mockMvc.perform(get("/api/stockAlert/platformBreakout").param("tradeDate", "2026-09-10"))
+                .andExpect(jsonPath("$.message").value("该交易日平台突破尚无成功结果"));
+    }
+
+    @Test
+    void shouldForwardPlatformPaginationAndReportServiceValidation() throws Exception {
+        var date = java.time.LocalDate.of(2026, 9, 10);
+        when(platformBreakoutService.findByTradeDate(date, 2, 10))
+                .thenReturn(PageRespVo.<cn.djct.stockdemo.pojo.vo.LeftSideStockRespVo>builder()
+                        .pageNum(2).pageSize(10).total(0).records(List.of()).build());
+        mockMvc.perform(get("/api/stockAlert/platformBreakout").param("tradeDate", "2026-09-10")
+                        .param("pageNum", "2").param("pageSize", "10"))
+                .andExpect(jsonPath("$.data.pageNum").value(2))
+                .andExpect(jsonPath("$.data.pageSize").value(10));
+        verify(platformBreakoutService).findByTradeDate(date, 2, 10);
+        when(platformBreakoutService.findByTradeDate(date, 1, 101))
+                .thenThrow(new IllegalArgumentException("页码必须大于0，每页数量必须在1到100之间"));
+        mockMvc.perform(get("/api/stockAlert/platformBreakout").param("tradeDate", "2026-09-10")
+                        .param("pageSize", "101"))
+                .andExpect(jsonPath("$.code").value(1000))
+                .andExpect(jsonPath("$.message").value("页码必须大于0，每页数量必须在1到100之间"));
+    }
+
+    @MockBean
+    private cn.djct.stockdemo.service.stockalert.PlatformBreakoutService platformBreakoutService;
+
+    @MockBean
+    private cn.djct.stockdemo.mapper.StockSelectionResultMapper stockSelectionResultMapper;
+
+    @MockBean
+    private cn.djct.stockdemo.mapper.StockSelectionRunMapper stockSelectionRunMapper;
+
+    @Test
     void shouldReturnTurnoverRankingsForRequestedDate() throws Exception {
         var date = java.time.LocalDate.of(2026, 9, 8);
         var stocks = List.of(TechnologyStockRankRespVo.builder()
@@ -111,11 +187,15 @@ class StockAlertControllerTest {
     @MockBean
     private StockCustomPlateMapper stockCustomPlateMapper;
     @MockBean
+    private cn.djct.stockdemo.mapper.StockCustomPlateMemberMapper stockCustomPlateMemberMapper;
+    @MockBean
     private StockDailyQuoteMapper stockDailyQuoteMapper;
     @MockBean
     private StockFundFlowMapper stockFundFlowMapper;
     @MockBean
     private StockPlateMapper stockPlateMapper;
+    @MockBean
+    private cn.djct.stockdemo.mapper.StockPlateMemberMapper stockPlateMemberMapper;
     @MockBean
     private StockPlateDailyQuoteMapper stockPlateDailyQuoteMapper;
     @MockBean

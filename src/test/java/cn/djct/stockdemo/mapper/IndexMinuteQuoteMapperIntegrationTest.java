@@ -29,9 +29,9 @@ class IndexMinuteQuoteMapperIntegrationTest {
     @Test
     void shouldUpsertByIndexCodeAndQuoteTime() {
         LocalDateTime firstMinute = LocalDateTime.of(2026, 8, 27, 9, 31);
-        indexMinuteQuoteMapper.upsert(quote(firstMinute, "3850.12"));
-        indexMinuteQuoteMapper.upsert(quote(firstMinute, "3850.20"));
-        indexMinuteQuoteMapper.upsert(quote(firstMinute.plusMinutes(1), "3851.10"));
+        indexMinuteQuoteMapper.upsertBatch(List.of(quote(firstMinute, "3850.12")));
+        indexMinuteQuoteMapper.upsertBatch(List.of(quote(firstMinute, "3850.20")));
+        indexMinuteQuoteMapper.upsertBatch(List.of(quote(firstMinute.plusMinutes(1), "3851.10")));
 
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM index_minute_quote",

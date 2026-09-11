@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.common;
 
-import cn.djct.stockdemo.pojo.dto.TechnologyStockQuoteDto;
+import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.pojo.vo.TechnologyStockRankingRespVo;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +26,7 @@ class TechnologyStockRankingCalculatorTest {
 
     @Test
     void shouldCalculateIndependentTopFiveRankingsAndAllowOverlap() {
-        List<TechnologyStockQuoteDto> quotes = new ArrayList<>();
+        List<StockDailyQuote> quotes = new ArrayList<>();
         quotes.addAll(quotes("000001", "科技一", "120", "-9", "100000001",
                 "100", "100", "110", "100", "100"));
         quotes.addAll(quotes("000002", "科技二", "118", "8", "100000001",
@@ -55,7 +55,7 @@ class TechnologyStockRankingCalculatorTest {
 
     @Test
     void shouldUseStrictPotentialBoundaries() {
-        List<TechnologyStockQuoteDto> quotes = new ArrayList<>();
+        List<StockDailyQuote> quotes = new ArrayList<>();
         quotes.addAll(quotes("000001", "有效科技", "110", "1", "100000001",
                 "100", "100", "100", "100", "100"));
         quotes.addAll(quotes("000002", "十五日等于边界", "115", "2", "100000001",
@@ -80,7 +80,7 @@ class TechnologyStockRankingCalculatorTest {
 
     @Test
     void shouldKeepHotCandidateWhenSixtyDayQuoteIsMissing() {
-        List<TechnologyStockQuoteDto> quotes = new ArrayList<>(quotes(
+        List<StockDailyQuote> quotes = new ArrayList<>(quotes(
                 "000001", "新股科技", "110", "5", "200000000",
                 "100", "100", "100", "100", "100"
         ));
@@ -96,7 +96,7 @@ class TechnologyStockRankingCalculatorTest {
 
     @Test
     void shouldRejectDuplicateStockQuote() {
-        List<TechnologyStockQuoteDto> quotes = new ArrayList<>(quotes(
+        List<StockDailyQuote> quotes = new ArrayList<>(quotes(
                 "000001", "科技一", "110", "5", "200000000",
                 "100", "100", "100", "100", "100"
         ));
@@ -113,7 +113,7 @@ class TechnologyStockRankingCalculatorTest {
 
     @Test
     void shouldOnlyExcludeNamesContainingUppercaseST() {
-        List<TechnologyStockQuoteDto> data = new ArrayList<>();
+        List<StockDailyQuote> data = new ArrayList<>();
         for (String name : List.of("ST科技", "*ST科技", "科技ST", "st科技")) {
             data.addAll(quotes(String.format("%06d", data.size() + 1), name,
                     "110", "-5", "200000000", "100", "100", "100", "100", "100"));
@@ -127,7 +127,7 @@ class TechnologyStockRankingCalculatorTest {
 
     @Test
     void shouldNotApplyPotentialRequirementsToHotRanking() {
-        List<TechnologyStockQuoteDto> data = List.of(
+        List<StockDailyQuote> data = List.of(
                 quote("000001", "科技一", STATISTICS_DATE, "90", null, null),
                 quote("000001", "科技一", TWENTY_DAY_BASE_DATE, "100", null, null)
         );
@@ -139,7 +139,7 @@ class TechnologyStockRankingCalculatorTest {
 
     @Test
     void shouldResolveEqualScoresByStockCodeAtFifthPlace() {
-        List<TechnologyStockQuoteDto> data = new ArrayList<>();
+        List<StockDailyQuote> data = new ArrayList<>();
         for (int index = 6; index >= 1; index--) {
             data.addAll(quotes(String.format("%06d", index), "科技", "110",
                     index % 2 == 0 ? "-5" : "5", "200000000",
@@ -153,7 +153,7 @@ class TechnologyStockRankingCalculatorTest {
                 .map(item -> item.getStockCode()).toList());
     }
 
-    private TechnologyStockRankingRespVo calculate(List<TechnologyStockQuoteDto> quotes) {
+    private TechnologyStockRankingRespVo calculate(List<StockDailyQuote> quotes) {
         return calculator.calculate(
                 STATISTICS_DATE,
                 FIVE_DAY_BASE_DATE,
@@ -165,7 +165,7 @@ class TechnologyStockRankingCalculatorTest {
         );
     }
 
-    private List<TechnologyStockQuoteDto> quotes(
+    private List<StockDailyQuote> quotes(
             String stockCode,
             String stockName,
             String currentClose,
@@ -188,7 +188,7 @@ class TechnologyStockRankingCalculatorTest {
         );
     }
 
-    private TechnologyStockQuoteDto quote(
+    private StockDailyQuote quote(
             String stockCode,
             String stockName,
             LocalDate tradeDate,
@@ -196,7 +196,7 @@ class TechnologyStockRankingCalculatorTest {
             String changePercent,
             String turnoverAmount
     ) {
-        return TechnologyStockQuoteDto.builder()
+        return StockDailyQuote.builder()
                 .stockCode(stockCode)
                 .stockName(stockName)
                 .tradeDate(tradeDate)

@@ -1,6 +1,6 @@
 package cn.djct.stockdemo.common;
 
-import cn.djct.stockdemo.pojo.dto.TechnologyStockQuoteDto;
+import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.pojo.vo.TechnologyStockRankRespVo;
 import cn.djct.stockdemo.pojo.vo.TechnologyStockRankingRespVo;
 import org.springframework.stereotype.Component;
@@ -40,7 +40,7 @@ public class TechnologyStockRankingCalculator {
             LocalDate fifteenDayBaseDate,
             LocalDate twentyDayBaseDate,
             LocalDate sixtyDayBaseDate,
-            List<TechnologyStockQuoteDto> quotes
+            List<StockDailyQuote> quotes
     ) {
         //用set集合存储合格目标日期
         Set<LocalDate> targetDates = validateAndBuildTargetDates(
@@ -53,7 +53,7 @@ public class TechnologyStockRankingCalculator {
         );
         Objects.requireNonNull(quotes, "科技股日行情不能为空");
         //按股票代码和目标日期分组
-        Map<String, Map<LocalDate, TechnologyStockQuoteDto>> quotesByStock = groupQuotes(
+        Map<String, Map<LocalDate, StockDailyQuote>> quotesByStock = groupQuotes(
                 quotes,
                 targetDates
         );
@@ -61,15 +61,15 @@ public class TechnologyStockRankingCalculator {
         List<RankCandidate> hotCandidates = new ArrayList<>();
         List<RankCandidate> potentialCandidates = new ArrayList<>();
         //遍历每只股票对应的目标日期行情
-        for (Map<LocalDate, TechnologyStockQuoteDto> quoteByDate : quotesByStock.values()) {
+        for (Map<LocalDate, StockDailyQuote> quoteByDate : quotesByStock.values()) {
             //获得当前交易日行情
-            TechnologyStockQuoteDto current = quoteByDate.get(statisticsDate);
+            StockDailyQuote current = quoteByDate.get(statisticsDate);
             if (!isCommonCandidate(current)) {
                 continue;
             }
 
             //获得20日的行情
-            TechnologyStockQuoteDto twentyDayBase = quoteByDate.get(twentyDayBaseDate);
+            StockDailyQuote twentyDayBase = quoteByDate.get(twentyDayBaseDate);
             //进行收盘价非法校验
             if (hasPositiveClose(twentyDayBase)) {
                 //计算20日涨幅，保留34位数字，向最近值舍入
@@ -126,17 +126,17 @@ public class TechnologyStockRankingCalculator {
         return targetDates;
     }
 
-    private Map<String, Map<LocalDate, TechnologyStockQuoteDto>> groupQuotes(
-            List<TechnologyStockQuoteDto> quotes,
+    private Map<String, Map<LocalDate, StockDailyQuote>> groupQuotes(
+            List<StockDailyQuote> quotes,
             Set<LocalDate> targetDates
     ) {
-        Map<String, Map<LocalDate, TechnologyStockQuoteDto>> quotesByStock = new HashMap<>();
-        for (TechnologyStockQuoteDto quote : quotes) {
+        Map<String, Map<LocalDate, StockDailyQuote>> quotesByStock = new HashMap<>();
+        for (StockDailyQuote quote : quotes) {
             if (quote == null || quote.getStockCode() == null || quote.getStockCode().isBlank()
                     || quote.getTradeDate() == null || !targetDates.contains(quote.getTradeDate())) {
                 throw new IllegalStateException("科技股日行情存在非法记录");
             }
-            Map<LocalDate, TechnologyStockQuoteDto> quoteByDate = quotesByStock.computeIfAbsent(
+            Map<LocalDate, StockDailyQuote> quoteByDate = quotesByStock.computeIfAbsent(
                     quote.getStockCode(),
                     ignored -> new HashMap<>()
             );
@@ -148,7 +148,7 @@ public class TechnologyStockRankingCalculator {
         return quotesByStock;
     }
 
-    private boolean isCommonCandidate(TechnologyStockQuoteDto current) {
+    private boolean isCommonCandidate(StockDailyQuote current) {
         if (current == null || current.getStockName() == null || current.getStockName().isBlank()
                 || !isPositive(current.getClosePrice())) {
             return false;
@@ -157,12 +157,12 @@ public class TechnologyStockRankingCalculator {
     }
 
     private boolean isPotentialCandidate(
-            TechnologyStockQuoteDto current,
-            TechnologyStockQuoteDto fiveDayBase,
-            TechnologyStockQuoteDto tenDayBase,
-            TechnologyStockQuoteDto fifteenDayBase,
-            TechnologyStockQuoteDto twentyDayBase,
-            TechnologyStockQuoteDto sixtyDayBase
+            StockDailyQuote current,
+            StockDailyQuote fiveDayBase,
+            StockDailyQuote tenDayBase,
+            StockDailyQuote fifteenDayBase,
+            StockDailyQuote twentyDayBase,
+            StockDailyQuote sixtyDayBase
     ) {
         //非法校验
         if (current.getChangePercent() == null
@@ -191,7 +191,7 @@ public class TechnologyStockRankingCalculator {
                 && currentClose.compareTo(sixtyDayBase.getClosePrice()) > 0;
     }
 
-    private boolean hasPositiveClose(TechnologyStockQuoteDto quote) {
+    private boolean hasPositiveClose(StockDailyQuote quote) {
         return quote != null && isPositive(quote.getClosePrice());
     }
 
@@ -200,7 +200,7 @@ public class TechnologyStockRankingCalculator {
     }
 
     //返回股票代码，名称，涨幅
-    private RankCandidate candidate(TechnologyStockQuoteDto quote, BigDecimal score) {
+    private RankCandidate candidate(StockDailyQuote quote, BigDecimal score) {
         return new RankCandidate(
                 quote.getStockCode(),
                 quote.getStockName(),

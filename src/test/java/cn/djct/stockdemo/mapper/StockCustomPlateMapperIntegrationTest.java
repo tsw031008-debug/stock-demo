@@ -54,6 +54,8 @@ class StockCustomPlateMapperIntegrationTest {
 
     @Autowired
     private StockCustomPlateMapper stockCustomPlateMapper;
+    @Autowired
+    private StockCustomPlateMemberMapper stockCustomPlateMemberMapper;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -61,7 +63,7 @@ class StockCustomPlateMapperIntegrationTest {
     @Test
     void shouldSeedDefaultsAndUpsertCustomMembersIdempotently() {
         List<StockCustomPlateMemberRelationDto> defaultMembers =
-                stockCustomPlateMapper.selectActiveMemberRelations();
+                stockCustomPlateMemberMapper.selectActiveMemberRelations();
         assertEquals(4, stockCustomPlateMapper.countActiveByCategory("CYCLE"));
         assertEquals(1055, jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM stock_custom_plate_member WHERE active = 1",
@@ -90,17 +92,17 @@ class StockCustomPlateMapperIntegrationTest {
                 .active(true)
                 .build();
 
-        stockCustomPlateMapper.upsertMemberBatch(List.of(member));
-        stockCustomPlateMapper.upsertMemberBatch(List.of(member));
+        stockCustomPlateMemberMapper.upsertMemberBatch(List.of(member));
+        stockCustomPlateMemberMapper.upsertMemberBatch(List.of(member));
 
-        assertEquals(1, stockCustomPlateMapper.countActiveMembers(plate.getId()));
-        assertEquals("浦发银行", stockCustomPlateMapper
+        assertEquals(1, stockCustomPlateMemberMapper.countActiveMembers(plate.getId()));
+        assertEquals("浦发银行", stockCustomPlateMemberMapper
                 .selectActiveMembers(plate.getId(), 0, 20)
                 .get(0)
                 .getStockName());
-        assertEquals(1056, stockCustomPlateMapper.selectActiveMemberRelations().size());
+        assertEquals(1056, stockCustomPlateMemberMapper.selectActiveMemberRelations().size());
 
-        stockCustomPlateMapper.deactivateMembers(plate.getId());
+        stockCustomPlateMemberMapper.deactivateMembers(plate.getId());
         stockCustomPlateMapper.deactivate(plate.getId());
         StockCustomPlate recreated = StockCustomPlate.builder()
                 .categoryCode("FINANCE")
