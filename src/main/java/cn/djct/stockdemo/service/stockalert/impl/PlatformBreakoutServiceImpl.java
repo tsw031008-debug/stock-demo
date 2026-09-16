@@ -45,8 +45,14 @@ public class PlatformBreakoutServiceImpl implements PlatformBreakoutService {
     private final StockAlertCalculator stockAlertCalculator;
 
     @Override
+    public boolean isCompleted(LocalDate tradeDate) {
+        return stockSelectionRunMapper.isCompleted(tradeDate, STRATEGY_TYPE);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public int selectStocks(LocalDate tradeDate) {
+        //参数校验
         validateDate(tradeDate);
         if (!tradeCalendarService.isTradingDay(tradeDate)) {
             return 0;
@@ -69,6 +75,8 @@ public class PlatformBreakoutServiceImpl implements PlatformBreakoutService {
         int selectedCount = 0;
         int insufficientCount = 0;
         int invalidHistoryCount = 0;
+        int invalidTodayCount = 0;
+        int readyCount = 0;
         String lastCode = "";
         while (true) {
             //根据交易日期、股票代码和批次大小，分批获取股票快照。
@@ -86,21 +94,29 @@ public class PlatformBreakoutServiceImpl implements PlatformBreakoutService {
                 Map<LocalDate, StockDailyQuote> history = byStock.getOrDefault(stock.getStockCode(), Map.of());
                 //根据今天日期获取行情
                 StockDailyQuote today = history.get(tradeDate);
-                //过滤无效数据：停牌（成交额和当前价为0）或无效数据
-                requireToday(today, stock.getStockCode());
-                String name = stock.getStockName();
-                //平台突破开头的过滤
-                if (name == null || name.isBlank()) {
-                    throw new IllegalStateException("股票名称缺失：" + stock.getStockCode());
+                if (today != null && "COMPLETE".equals(today.getDataStatus())) {
+                    readyCount++;
                 }
-                if (name.trim().startsWith("ST") || name.trim().startsWith("*ST")
-                        || isSuspended(today)) {
+                String name = stock.getStockName();
+                // ST直接排除，不让其行情异常阻断其他股票筛选。
+                if (name != null && (name.trim().startsWith("ST") || name.trim().startsWith("*ST"))) {
+                    continue;
+                }
+                String invalidReason = name == null || name.isBlank() ? "股票名称缺失" : invalidTodayReason(today);
+                if (invalidReason != null) {
+                    invalidTodayCount++;
+                    log.warn("平台突破跳过当日行情异常股票，stockCode={}，tradeDate={}，reason={}",
+                            stock.getStockCode(), tradeDate, invalidReason);
+                    continue;
+                }
+                if (isSuspended(today)) {
                     continue;
                 }
                 List<StockDailyQuote> ordered = new ArrayList<>();
-                // 从dates中找到第一个包含在history中的日期firstAvailable，作为历史行情的起始日期
+                // 从范围日期dates中找到第一个包含在history中的日期firstAvailable，作为历史行情的起始日期
                 LocalDate firstAvailable = dates.stream().filter(history::containsKey).findFirst().orElseThrow();
                 boolean invalidHistory = false;
+                //检查历史行情是否缺失或无效
                 for (LocalDate date : dates) {
                     if (date.isBefore(firstAvailable)) {
                         continue;
@@ -122,17 +138,10 @@ public class PlatformBreakoutServiceImpl implements PlatformBreakoutService {
                     invalidHistoryCount++;
                     continue;
                 }
-                //避免由于前面过滤或者历史行情异常导致的不足200个交易日，记录并跳过
-                if (ordered.size() < 200) {
-                    if (!firstAvailable.equals(stockDailyQuoteMapper.selectFirstQuoteDate(stock.getStockCode()))) {
-                        invalidHistoryCount++;
-                        log.warn("平台突破跳过历史窗口前端缺失股票，stockCode={}，tradeDate={}，firstAvailable={}",
-                                stock.getStockCode(), tradeDate, firstAvailable);
-                        continue;
-                    }
-                    //统计历史不足200个交易日的股票数量
+                // MA60至少需要60日；不足200日时使用已有连续行情，不压缩中间缺口。
+                if (ordered.size() < 60) {
                     insufficientCount++;
-                    log.info("平台突破历史不足，跳过，stockCode={}，availableDays={}", stock.getStockCode(), ordered.size());
+                    log.info("平台突破历史不足60日，跳过，stockCode={}，availableDays={}", stock.getStockCode(), ordered.size());
                     continue;
                 }
                 //进行平台突破匹配
@@ -147,15 +156,19 @@ public class PlatformBreakoutServiceImpl implements PlatformBreakoutService {
             processedCount += stocks.size();
             lastCode = stocks.get(stocks.size() - 1).getStockCode();
         }
+        // 全部当日日线未就绪时不能标记成功零入选；回滚并保留原有结果。
+        if (readyCount == 0) {
+            throw new IllegalStateException("当日日线尚未就绪");
+        }
         //验证处理数量和结果数量一致
         if (processedCount != expectedCount || stockSelectionResultMapper.countResults(tradeDate, STRATEGY_TYPE) != selectedCount) {
             throw new IllegalStateException("平台突破股票处理数量或结果数量不一致");
         }
         //标记任务完成
         stockSelectionRunMapper.completeRun(tradeDate, STRATEGY_TYPE);
-        log.info("平台突破计算完成，status={}，tradeDate={}，processedCount={}，selectedCount={}，insufficientCount={}，invalidHistoryCount={}",
-                invalidHistoryCount == 0 ? "SUCCESS" : "PARTIAL", tradeDate, processedCount,
-                selectedCount, insufficientCount, invalidHistoryCount);
+        log.info("平台突破计算完成，status={}，tradeDate={}，processedCount={}，selectedCount={}，insufficientCount={}，invalidHistoryCount={}，invalidTodayCount={}",
+                invalidHistoryCount == 0 && invalidTodayCount == 0 ? "SUCCESS" : "PARTIAL", tradeDate, processedCount,
+                selectedCount, insufficientCount, invalidHistoryCount, invalidTodayCount);
         return selectedCount;
     }
 
@@ -216,11 +229,11 @@ public class PlatformBreakoutServiceImpl implements PlatformBreakoutService {
         }
     }
 
-    private void requireToday(StockDailyQuote quote, String code) {
+    private String invalidTodayReason(StockDailyQuote quote) {
         if (quote == null || !"COMPLETE".equals(quote.getDataStatus())
                 || quote.getTurnoverAmountYuan() == null || quote.getTurnoverAmountYuan().signum() < 0
                 || quote.getClosePrice() == null) {
-            throw new IllegalStateException("当日日线尚未完整落库：" + code);
+            return "当日日线尚未完整落库";
         }
 
         //判断是否停牌
@@ -228,8 +241,9 @@ public class PlatformBreakoutServiceImpl implements PlatformBreakoutService {
                 || !positive(quote.getHighPrice()) || !positive(quote.getLowPrice())
                 || quote.getHighPrice().compareTo(quote.getClosePrice()) < 0
                 || quote.getLowPrice().compareTo(quote.getClosePrice()) > 0 || quote.getChangePercent() == null)) {
-            throw new IllegalStateException("当日日线价格或涨幅无效：" + code);
+            return "当日日线价格或涨幅无效";
         }
+        return null;
     }
 
     private boolean isSuspended(StockDailyQuote quote) {

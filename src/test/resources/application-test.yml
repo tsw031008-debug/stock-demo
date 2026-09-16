@@ -24,6 +24,10 @@ logging:
 
 stock:
   alert:
+    strong-stock-pullback:
+      enabled: false
+    strong-trend-breakout:
+      enabled: false
     platform-breakout:
       enabled: false
   basic:

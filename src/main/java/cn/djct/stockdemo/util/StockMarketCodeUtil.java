@@ -1,5 +1,7 @@
 package cn.djct.stockdemo.util;
 
+import java.math.BigDecimal;
+
 /**
  * 股票代码市场前缀转换。
  */
@@ -16,6 +18,18 @@ public final class StockMarketCodeUtil {
             case '0', '3', '6' -> true;
             default -> false;
         };
+    }
+
+    /** 当前非ST A股的涨停比例；调用方负责排除当前ST，不追溯历史状态。 */
+    public static BigDecimal currentNonStLimitUpRate(String stockCode) {
+        String symbol = toTencentSymbol(stockCode);
+        if (symbol.startsWith("bj")) {
+            return new BigDecimal("0.30");
+        }
+        if (stockCode.startsWith("3") || stockCode.startsWith("688") || stockCode.startsWith("689")) {
+            return new BigDecimal("0.20");
+        }
+        return new BigDecimal("0.10");
     }
 
     // 腾讯股票代码转换

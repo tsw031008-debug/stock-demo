@@ -85,4 +85,6 @@ public interface StockDailyQuoteMapper {
 
     /** 定位指定股票已有历史的最早交易日，用于区分窗口前端缺失与历史不足。 */
     LocalDate selectFirstQuoteDate(@Param("stockCode") String stockCode);
+    /** 统计截至指定日期已有的日线交易日期数，用于简化判断交易历史长度；不代表上市日期。 */
+    int countByStockCodeThroughTradeDate(@Param("stockCode") String stockCode, @Param("tradeDate") LocalDate tradeDate);
 }

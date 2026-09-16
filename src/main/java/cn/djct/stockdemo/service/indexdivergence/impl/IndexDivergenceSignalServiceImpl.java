@@ -21,10 +21,7 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 指数MACD背离信号服务实现。
@@ -46,10 +43,6 @@ public class IndexDivergenceSignalServiceImpl implements IndexDivergenceSignalSe
     private final IndexDivergenceSignalMapper indexDivergenceSignalMapper;
     private final IndexMacdCalculator indexMacdCalculator;
     private final IndexDivergenceSignalCalculator indexDivergenceSignalCalculator;
-    private final Map<LocalDate, PreviousDayStatus> previousDayStatusCache =
-            new ConcurrentHashMap<>();
-    private final Set<LocalDate> blockedTradeDates = ConcurrentHashMap.newKeySet();
-
     /**
      * 前一完整交易日用于MACD预热，只保存当前分钟新确认的背离信号。
      */
@@ -57,56 +50,44 @@ public class IndexDivergenceSignalServiceImpl implements IndexDivergenceSignalSe
     @Transactional(rollbackFor = Exception.class)
     public int calculateAndSave(LocalDateTime quoteTime) {
         Objects.requireNonNull(quoteTime, "行情时间不能为空");
-        LocalDateTime currentMinute = quoteTime.truncatedTo(ChronoUnit.MINUTES);
-        LocalDate tradeDate = quoteTime.toLocalDate();
-        if (blockedTradeDates.contains(tradeDate)) {
-            return 0;
-        }
+        return calculate(quoteTime.truncatedTo(ChronoUnit.MINUTES), false);
+    }
 
-        PreviousDayStatus previousDayStatus = previousDayStatusCache.get(tradeDate);
-        LocalDate previousTradeDate = previousDayStatus == null
-                ? tradeCalendarService.getPreviousTradingDay(tradeDate, 1)
-                : previousDayStatus.previousTradeDate();
-        if (previousDayStatus != null && !previousDayStatus.complete()) {
+    /** 补录后重算当日已确认信号，前一交易日仍仅用于预热。 */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int recoverAndSave(LocalDateTime checkTime) {
+        Objects.requireNonNull(checkTime, "检查时间不能为空");
+        LocalTime endTime = checkTime.toLocalTime().truncatedTo(ChronoUnit.MINUTES);
+        if (endTime.isBefore(MORNING_START)
+                || !tradeCalendarService.isTradingDay(checkTime.toLocalDate())) {
             return 0;
         }
-        LocalDateTime startTime = LocalDateTime.of(previousTradeDate, MORNING_START);
-        // 获取前一交易日至当前分钟的指数分钟行情
+        if (endTime.isAfter(AFTERNOON_END)) {
+            endTime = AFTERNOON_END;
+        } else if (endTime.isAfter(MORNING_END) && endTime.isBefore(AFTERNOON_START)) {
+            endTime = MORNING_END;
+        }
+        return calculate(checkTime.toLocalDate().atTime(endTime), true);
+    }
+
+    private int calculate(LocalDateTime currentMinute, boolean recovery) {
+        if (!isCollectionTime(currentMinute.toLocalTime())) {
+            return 0;
+        }
+        LocalDate tradeDate = currentMinute.toLocalDate();
+        LocalDate previousTradeDate = tradeCalendarService.getPreviousTradingDay(tradeDate, 1);
         List<IndexMinuteQuote> quotes = indexMinuteQuoteMapper.selectByIndexCodeAndQuoteTimeRange(
-                SHANGHAI_COMPOSITE_CODE,
-                startTime,
-                currentMinute
-        );
-
-        if (previousDayStatus == null) {
-            List<IndexMinuteQuote> previousDayQuotes = quotes.stream()
-                    .filter(item -> previousTradeDate.equals(item.getTradeDate()))
-                    .toList();
-            boolean complete = hasExpectedMinutes(
-                    previousTradeDate,
-                    previousDayQuotes,
-                    AFTERNOON_END
-            );
-            previousDayStatusCache.put(
-                    tradeDate,
-                    new PreviousDayStatus(previousTradeDate, complete)
-            );
-            if (!complete) {
-                log.info("前一交易日指数分钟行情不完整，当日后续跳过正式背离信号，"
-                                + "如已补齐请重启应用，tradeDate={}，actualCount={}",
-                        previousTradeDate, previousDayQuotes.size());
-                return 0;
-            }
-        }
-
+                SHANGHAI_COMPOSITE_CODE, previousTradeDate.atTime(MORNING_START), currentMinute);
+        // 不缓存失败状态：补齐行情后，下次计算必须能够重新验证并恢复。
+        List<IndexMinuteQuote> previousDayQuotes = quotes.stream()
+                .filter(item -> previousTradeDate.equals(item.getTradeDate())).toList();
         List<IndexMinuteQuote> currentDayQuotes = quotes.stream()
-                .filter(item -> tradeDate.equals(item.getTradeDate()))
-                .toList();
-        if (!hasExpectedMinutes(tradeDate, currentDayQuotes, currentMinute.toLocalTime())) {
-            blockedTradeDates.add(tradeDate);
-            log.warn("当前交易日指数分钟行情存在缺口，当日后续跳过正式背离信号，"
-                            + "如已补齐请重启应用，tradeDate={}，currentMinute={}，actualCount={}",
-                    tradeDate, currentMinute, currentDayQuotes.size());
+                .filter(item -> tradeDate.equals(item.getTradeDate())).toList();
+        if (!hasExpectedMinutes(previousTradeDate, previousDayQuotes, AFTERNOON_END)
+                || !hasExpectedMinutes(tradeDate, currentDayQuotes, currentMinute.toLocalTime())) {
+            log.warn("指数分钟行情不完整，跳过本次信号计算，tradeDate={}，currentMinute={}，recovery={}",
+                    tradeDate, currentMinute, recovery);
             return 0;
         }
 
@@ -115,13 +96,18 @@ public class IndexDivergenceSignalServiceImpl implements IndexDivergenceSignalSe
         List<IndexDivergenceSignal> currentMinuteSignals = indexDivergenceSignalCalculator
                 .detect(macdItems)
                 .stream()
-                .filter(signal -> currentMinute.equals(signal.getSignalTime()))
+                .filter(signal -> recovery
+                        ? tradeDate.equals(signal.getSignalTime().toLocalDate())
+                            && !signal.getSignalTime().isAfter(currentMinute)
+                        : currentMinute.equals(signal.getSignalTime()))
                 .map(this::toEntity)
                 .toList();
         if (currentMinuteSignals.isEmpty()) {
             return 0;
         }
         indexDivergenceSignalMapper.upsertBatch(currentMinuteSignals);
+        log.info("指数背离信号保存完成，tradeDate={}，endTime={}，recovery={}，signalCount={}",
+                tradeDate, currentMinute, recovery, currentMinuteSignals.size());
         return currentMinuteSignals.size();
     }
 
@@ -196,6 +182,4 @@ public class IndexDivergenceSignalServiceImpl implements IndexDivergenceSignalSe
                 .build();
     }
 
-    private record PreviousDayStatus(LocalDate previousTradeDate, boolean complete) {
-    }
 }

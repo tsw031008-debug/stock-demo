@@ -51,7 +51,7 @@ public class StockFundFlowController {
         return Result.success("操作成功", stockFundFlowService.findByTradeDate(tradeDate, pageNum, pageSize));
     }
 
-    @Operation(summary = "手动同步当天股票资金流向")
+    @Operation(summary = "手动同步当天股票资金流向", description = "仅允许当天15:20及之后同步；盘中请求拒绝，仅盘后完整覆盖才跳过重复采集。")
     @PostMapping("/synchronize")
     public Result<StockFundFlowSynchronizeRespVo> synchronize() {
         LocalDate tradeDate = LocalDate.now(SHANGHAI_ZONE);

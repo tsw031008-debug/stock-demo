@@ -1,10 +1,10 @@
 package cn.djct.stockdemo.service.marketlevel.impl;
 
 import cn.djct.stockdemo.common.MarketLevelCalculator;
-import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
+import cn.djct.stockdemo.mapper.MarketDailyTurnoverMapper;
 import cn.djct.stockdemo.pojo.dto.DailyMarketTurnoverDto;
 import cn.djct.stockdemo.pojo.vo.MarketLevelRespVo;
-import cn.djct.stockdemo.pojo.dto.MarketTurnoverRecordDto;
+import cn.djct.stockdemo.pojo.entity.MarketDailyTurnover;
 import cn.djct.stockdemo.service.marketlevel.MarketLevelService;
 import cn.djct.stockdemo.service.marketlevel.MarketLevelSourceService;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * 市场水位服务实现。
@@ -32,7 +31,7 @@ public class MarketLevelServiceImpl implements MarketLevelService {
     private static final LocalTime MARKET_OPEN_TIME = LocalTime.of(9, 30);
     private static final ZoneId SHANGHAI_ZONE = ZoneId.of("Asia/Shanghai");
 
-    private final StockDailyQuoteMapper stockDailyQuoteMapper;
+    private final MarketDailyTurnoverMapper marketDailyTurnoverMapper;
     private final MarketLevelSourceService marketLevelSourceService;
     private final TradeCalendarService tradeCalendarService;
     private final MarketLevelCalculator marketLevelCalculator;
@@ -41,20 +40,20 @@ public class MarketLevelServiceImpl implements MarketLevelService {
     /**
      * 创建市场水位服务。
      *
-     * @param stockDailyQuoteMapper   股票日行情Mapper
+     * @param marketDailyTurnoverMapper   已校验的每日市场成交额Mapper
      * @param marketLevelSourceService 市场水位实时数据源
      * @param tradeCalendarService     交易日历服务
      * @param marketLevelCalculator    市场水位计算组件
      */
     @Autowired
     public MarketLevelServiceImpl(
-            StockDailyQuoteMapper stockDailyQuoteMapper,
+            MarketDailyTurnoverMapper marketDailyTurnoverMapper,
             MarketLevelSourceService marketLevelSourceService,
             TradeCalendarService tradeCalendarService,
             MarketLevelCalculator marketLevelCalculator
     ) {
         this(
-                stockDailyQuoteMapper,
+                marketDailyTurnoverMapper,
                 marketLevelSourceService,
                 tradeCalendarService,
                 marketLevelCalculator,
@@ -65,20 +64,20 @@ public class MarketLevelServiceImpl implements MarketLevelService {
     /**
      * 创建使用指定时钟的市场水位服务，供日期边界测试使用。
      *
-     * @param stockDailyQuoteMapper    股票日行情Mapper
+     * @param marketDailyTurnoverMapper    已校验的每日市场成交额Mapper
      * @param marketLevelSourceService 市场水位实时数据源
      * @param tradeCalendarService      交易日历服务
      * @param marketLevelCalculator     市场水位计算组件
      * @param clock                     日期时间时钟
      */
     MarketLevelServiceImpl(
-            StockDailyQuoteMapper stockDailyQuoteMapper,
+            MarketDailyTurnoverMapper marketDailyTurnoverMapper,
             MarketLevelSourceService marketLevelSourceService,
             TradeCalendarService tradeCalendarService,
             MarketLevelCalculator marketLevelCalculator,
             Clock clock
     ) {
-        this.stockDailyQuoteMapper = stockDailyQuoteMapper;
+        this.marketDailyTurnoverMapper = marketDailyTurnoverMapper;
         this.marketLevelSourceService = marketLevelSourceService;
         this.tradeCalendarService = tradeCalendarService;
         this.marketLevelCalculator = marketLevelCalculator;
@@ -99,12 +98,8 @@ public class MarketLevelServiceImpl implements MarketLevelService {
         LocalDate statisticsDate = resolveStatisticsDate(currentDate, currentTime);
         // 获取统计日前5个交易日，历史范围不包含当前统计日
         List<LocalDate> historicalTradeDates = resolveHistoricalTradeDates(statisticsDate);
-        // 获取前5日的沪深A股的成交额
-        List<MarketTurnoverRecordDto> turnoverRecords =
-                stockDailyQuoteMapper.selectMarketTurnoverRecords(historicalTradeDates);
-        // 按交易日汇总成交额
-        List<DailyMarketTurnoverDto> historicalTurnovers =
-                aggregateHistoricalTurnovers(historicalTradeDates, turnoverRecords);
+        // 与周月统计使用同一份已校验日汇总，禁止缺行明细被误当作全市场金额。
+        List<DailyMarketTurnoverDto> historicalTurnovers = loadHistoricalTurnovers(historicalTradeDates);
         // 获取腾讯实时沪深两市成交额并计算市场水位
         BigDecimal currentTurnoverAmountYuan = marketLevelSourceService.fetchCurrentTurnoverAmountYuan();
         return marketLevelCalculator.calculate(currentTurnoverAmountYuan, historicalTurnovers);
@@ -140,59 +135,30 @@ public class MarketLevelServiceImpl implements MarketLevelService {
         return tradeDates;
     }
 
-    /**
-     * 按交易日汇总成交额，并统计成交额字段是否完整。
-     *
-     * @param tradeDates      需要汇总的交易日，按日期倒序排列
-     * @param turnoverRecords 成交额原始记录
-     * @return 每个交易日的成交额汇总数据
-     */
-    private List<DailyMarketTurnoverDto> aggregateHistoricalTurnovers(
-            List<LocalDate> tradeDates,
-            List<MarketTurnoverRecordDto> turnoverRecords
-    ) {
-        // 校验历史成交额明细不能为空
-        Objects.requireNonNull(turnoverRecords, "历史市场成交额明细不能为空");
-        //按照交易日进行分组统计
-        Map<LocalDate, List<MarketTurnoverRecordDto>> recordsByDate = turnoverRecords.stream()
-                .collect(Collectors.groupingBy(MarketTurnoverRecordDto::getTradeDate));
-
-        //返回按交易日顺序排列的成交额汇总数据
-        return tradeDates.stream()
-                .map(tradeDate -> aggregateDailyTurnover(
-                        tradeDate,
-                        recordsByDate.getOrDefault(tradeDate, List.of())
-                ))
-                .toList();
-    }
-
-    /**
-     * 汇总单个交易日成交额，空成交额不参与求和并由记录数差异标记为数据不完整。
-     *
-     * @param tradeDate 交易日
-     * @param records   当日成交额原始记录
-     * @return 当日成交额汇总数据
-     */
-    private DailyMarketTurnoverDto aggregateDailyTurnover(
-            LocalDate tradeDate,
-            List<MarketTurnoverRecordDto> records
-    ) {
-        // 求和当日所有成交额
-        BigDecimal turnoverAmountYuan = records.stream()
-                .map(MarketTurnoverRecordDto::getTurnoverAmountYuan)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        // 统计当日成交额记录数
-        int amountRecordCount = (int) records.stream()
-                .map(MarketTurnoverRecordDto::getTurnoverAmountYuan)
-                .filter(Objects::nonNull)
-                .count();
-
-        return DailyMarketTurnoverDto.builder()
-                .tradeDate(tradeDate)
-                .turnoverAmountYuan(turnoverAmountYuan)
-                .totalRecordCount(records.size())
-                .amountRecordCount(amountRecordCount)
-                .build();
+    private List<DailyMarketTurnoverDto> loadHistoricalTurnovers(List<LocalDate> tradeDates) {
+        List<MarketDailyTurnover> records = marketDailyTurnoverMapper.selectCompleteByDateRange(
+                tradeDates.get(tradeDates.size() - 1), tradeDates.get(0));
+        Map<LocalDate, MarketDailyTurnover> byDate = new java.util.HashMap<>();
+        for (MarketDailyTurnover record : records) {
+            if (record == null || !tradeDates.contains(record.getTradeDate())
+                    || !"COMPLETE".equals(record.getDataStatus())
+                    || byDate.put(record.getTradeDate(), record) != null) {
+                throw new IllegalStateException("历史市场成交额汇总日期或状态无效");
+            }
+        }
+        List<DailyMarketTurnoverDto> result = new ArrayList<>(HISTORY_DAYS);
+        for (LocalDate tradeDate : tradeDates) {
+            MarketDailyTurnover record = byDate.get(tradeDate);
+            if (record == null || record.getStockCount() == null || record.getStockCount() <= 0
+                    || !record.getStockCount().equals(record.getAmountRecordCount())
+                    || record.getTurnoverAmountYuan() == null || record.getTurnoverAmountYuan().signum() < 0) {
+                throw new IllegalStateException("历史市场成交额汇总缺失或不完整，tradeDate=" + tradeDate);
+            }
+            result.add(DailyMarketTurnoverDto.builder().tradeDate(tradeDate)
+                    .turnoverAmountYuan(record.getTurnoverAmountYuan())
+                    .totalRecordCount(record.getStockCount()).amountRecordCount(record.getAmountRecordCount())
+                    .build());
+        }
+        return result;
     }
 }

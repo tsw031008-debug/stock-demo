@@ -16,6 +16,13 @@ class PlatformBreakoutCalculatorTest {
     private final PlatformBreakoutCalculator calculator = new PlatformBreakoutCalculator();
 
     @Test
+    void shouldUseAvailableHistoryFromSixtyToTwoHundredDays() {
+        for (int size : List.of(60, 68, 128, 199, 200)) {
+            assertTrue(calculator.matches(quotes().subList(200 - size, 200)));
+        }
+    }
+
+    @Test
     void shouldMatchAllConditions() {
         assertTrue(calculator.matches(quotes()));
     }
@@ -99,7 +106,7 @@ class PlatformBreakoutCalculatorTest {
     @Test
     void shouldRejectMissingAndInvalidPricesInsteadOfSilentlyNotSelecting() {
         var quotes = quotes();
-        assertThrows(IllegalArgumentException.class, () -> calculator.matches(quotes.subList(1, 200)));
+        assertThrows(IllegalArgumentException.class, () -> calculator.matches(quotes.subList(141, 200)));
         quotes.get(0).setHighPrice(null);
         assertThrows(IllegalStateException.class, () -> calculator.matches(quotes));
         quotes.get(0).setHighPrice(BigDecimal.ONE);

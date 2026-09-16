@@ -81,6 +81,10 @@ logging:
 
 stock:
   alert:
+    strong-stock-pullback:
+      enabled: ${STRONG_STOCK_PULLBACK_ENABLED:true}
+    strong-trend-breakout:
+      enabled: ${STRONG_TREND_BREAKOUT_ENABLED:true}
     platform-breakout:
       enabled: ${PLATFORM_BREAKOUT_ENABLED:true}
     technology:

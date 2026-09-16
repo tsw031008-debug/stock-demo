@@ -73,6 +73,21 @@ public class StockFundFlowServiceImpl implements StockFundFlowService {
     }
 
     @Override
+    public boolean hasClosingSnapshot(LocalDate tradeDate, List<String> stockCodes) {
+        if (stockCodes.isEmpty()) {
+            return false;
+        }
+        for (int start = 0; start < stockCodes.size(); start += SAVE_BATCH_SIZE) {
+            List<String> batch = stockCodes.subList(start, Math.min(start + SAVE_BATCH_SIZE, stockCodes.size()));
+            if (stockFundFlowMapper.countCompleteByCodesAndCollectionRange(tradeDate, batch,
+                    tradeDate.atTime(15, 20), tradeDate.plusDays(1).atStartOfDay()) != batch.size()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public int saveSnapshot(List<StockFundFlow> fundFlows) {
         Objects.requireNonNull(fundFlows, "股票资金流向不能为空");

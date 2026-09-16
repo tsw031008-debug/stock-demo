@@ -63,7 +63,9 @@ class IndexStyleServiceImplTest {
                 .thenReturn(tradeDates);
         when(indexDailyQuoteMapper.selectByTradeDatesAndCodes(storedTradeDates, indexCodes()))
                 .thenReturn(storedQuotes);
-        when(sourceService.fetch(currentDate)).thenReturn(currentQuotes);
+        List<IndexDailyQuote> collectedQuotes = new ArrayList<>(currentQuotes);
+        collectedQuotes.add(IndexDailyQuote.builder().indexCode("000300").tradeDate(currentDate).build());
+        when(sourceService.fetch(currentDate)).thenReturn(collectedQuotes);
         when(indexStyleCalculator.calculate(tradeDates, allQuotes)).thenReturn(List.of());
 
         IndexStyleComparisonDto result = indexStyleService.getLatest();
@@ -160,7 +162,7 @@ class IndexStyleServiceImplTest {
     }
 
     private List<String> indexCodes() {
-        return Arrays.stream(IndexStyleIndex.values())
+        return Arrays.stream(IndexStyleIndex.styleValues())
                 .map(IndexStyleIndex::getIndexCode)
                 .toList();
     }

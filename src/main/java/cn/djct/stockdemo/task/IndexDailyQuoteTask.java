@@ -15,7 +15,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 
 /**
- * 四个固定指数的日行情同步任务。
+ * 五个固定指数的日行情同步任务。
  */
 @Slf4j
 @Component

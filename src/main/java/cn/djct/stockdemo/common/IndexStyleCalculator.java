@@ -46,7 +46,7 @@ public class IndexStyleCalculator {
         //标记强弱map
         Map<String, List<IndexDailyStyleRespVo>> stylesByCode = new HashMap<>();
 
-        for (IndexStyleIndex index : IndexStyleIndex.values()) {
+        for (IndexStyleIndex index : IndexStyleIndex.styleValues()) {
             //按照指数代码初始化强弱列表
             stylesByCode.put(index.getIndexCode(), new ArrayList<>(tradeDates.size()));
         }
@@ -63,7 +63,7 @@ public class IndexStyleCalculator {
                     .compareTo(dailyChanges.get(weakestCode)) == 0;
 
             //按照指数代码标记强弱
-            for (IndexStyleIndex index : IndexStyleIndex.values()) {
+            for (IndexStyleIndex index : IndexStyleIndex.styleValues()) {
                 IndexStrengthType strengthType = IndexStrengthType.NONE;
                 if (!allEqual && index.getIndexCode().equals(strongestCode)) {
                     strengthType = IndexStrengthType.STRONG;
@@ -78,8 +78,8 @@ public class IndexStyleCalculator {
             }
         }
 
-        List<IndexStyleItemRespVo> result = new ArrayList<>(IndexStyleIndex.values().length);
-        for (IndexStyleIndex index : IndexStyleIndex.values()) {
+        List<IndexStyleItemRespVo> result = new ArrayList<>(IndexStyleIndex.styleValues().length);
+        for (IndexStyleIndex index : IndexStyleIndex.styleValues()) {
             result.add(IndexStyleItemRespVo.builder()
                     .indexCode(index.getIndexCode())
                     .indexName(index.getIndexName())
@@ -121,10 +121,10 @@ public class IndexStyleCalculator {
         //校验每日的每个知识数据是否完整
         for (LocalDate tradeDate : tradeDates) {
             Map<String, BigDecimal> dailyChanges = result.get(tradeDate);
-            if (dailyChanges == null || dailyChanges.size() != IndexStyleIndex.values().length) {
+            if (dailyChanges == null || dailyChanges.size() != IndexStyleIndex.styleValues().length) {
                 throw new IllegalStateException("指数日行情数据不完整，tradeDate=" + tradeDate);
             }
-            for (IndexStyleIndex index : IndexStyleIndex.values()) {
+            for (IndexStyleIndex index : IndexStyleIndex.styleValues()) {
                 if (!dailyChanges.containsKey(index.getIndexCode())) {
                     throw new IllegalStateException("指数日行情数据不完整，tradeDate=" + tradeDate
                             + "，indexCode=" + index.getIndexCode());
@@ -152,8 +152,8 @@ public class IndexStyleCalculator {
     }
 
     private String findExtremeCode(Map<String, BigDecimal> changes, boolean maximum) {
-        IndexStyleIndex selected = IndexStyleIndex.values()[0];
-        for (IndexStyleIndex index : IndexStyleIndex.values()) {
+        IndexStyleIndex selected = IndexStyleIndex.styleValues()[0];
+        for (IndexStyleIndex index : IndexStyleIndex.styleValues()) {
             int comparison = changes.get(index.getIndexCode())
                     .compareTo(changes.get(selected.getIndexCode()));
             if ((maximum && comparison > 0) || (!maximum && comparison < 0)) {

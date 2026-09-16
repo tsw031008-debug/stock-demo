@@ -60,7 +60,7 @@ public class StockDailyQuoteCollectionFace {
 
             // 判断当天股票日行情数量是否与股票基础信息数量一致
             int savedCount = stockDailyQuoteService.countByTradeDate(tradeDate);
-            if (savedCount == stockCount) {
+            if (savedCount == stockCount && hasClosingSnapshot(tradeDate, stockCount)) {
                 log.info("股票日行情当天已经同步，本次触发跳过，tradeDate={}", tradeDate);
                 return 0;
             }
@@ -116,5 +116,23 @@ public class StockDailyQuoteCollectionFace {
                     + expectedCount + "，actual=" + quotes.size());
         }
         return quotes;
+    }
+
+    private boolean hasClosingSnapshot(LocalDate tradeDate, int expectedCount) {
+        int checkedCount = 0;
+        String lastStockCode = "";
+        while (true) {
+            List<StockBasic> stocks = stockBasicService.findSnapshotBatch(
+                    tradeDate, lastStockCode, STOCK_READ_BATCH_SIZE);
+            if (stocks.isEmpty()) {
+                return checkedCount == expectedCount;
+            }
+            if (!stockDailyQuoteService.hasClosingQuotes(tradeDate,
+                    stocks.stream().map(StockBasic::getStockCode).toList())) {
+                return false;
+            }
+            checkedCount += stocks.size();
+            lastStockCode = stocks.get(stocks.size() - 1).getStockCode();
+        }
     }
 }

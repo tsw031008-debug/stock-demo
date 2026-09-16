@@ -57,7 +57,8 @@ public class StockFundFlowCollectionFace {
 
             // 如果当天已经同步过，则跳过
             int savedCount = stockFundFlowService.countByTradeDate(tradeDate);
-            if (savedCount == stocks.size()) {
+            if (savedCount == stocks.size() && stockFundFlowService.hasClosingSnapshot(tradeDate,
+                    stocks.stream().map(StockBasic::getStockCode).toList())) {
                 log.info("股票资金流向当天已经同步，本次触发跳过，tradeDate={}", tradeDate);
                 return 0;
             }

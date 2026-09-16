@@ -28,5 +28,8 @@ public interface StockFundFlowService {
 
     int countByTradeDate(LocalDate tradeDate);
 
+    /** 判断股票集合是否全部具有当天15:20之后采集的完整资金流向。 */
+    boolean hasClosingSnapshot(LocalDate tradeDate, List<String> stockCodes);
+
     int saveSnapshot(List<StockFundFlow> fundFlows);
 }

@@ -25,4 +25,7 @@ public interface StockSelectionResultMapper {
     List<LeftSideStockRespVo> selectPage(@Param("tradeDate") LocalDate tradeDate,
                                         @Param("strategyType") String strategyType,
                                         @Param("offset") long offset, @Param("limit") int limit);
+    /** 按当日换手率降序、代码升序分页查询入选结果。 */
+    List<LeftSideStockRespVo> selectPageByTurnoverRate(@Param("tradeDate") LocalDate tradeDate,
+            @Param("strategyType") String strategyType, @Param("offset") long offset, @Param("limit") int limit);
 }

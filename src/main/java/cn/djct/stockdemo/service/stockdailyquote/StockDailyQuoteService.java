@@ -17,6 +17,9 @@ public interface StockDailyQuoteService {
      */
     int countByTradeDate(LocalDate tradeDate);
 
+    /** 检查指定股票批次是否已保存同日盘后完整行情，缺行或盘中记录返回false。 */
+    boolean hasClosingQuotes(LocalDate tradeDate, List<String> stockCodes);
+
     /**
      * 保存行情快照数据。
      * @param quotes

@@ -27,5 +27,7 @@ class MarketDailyTurnoverTaskTest {
         when(marketDailyTurnoverService.synchronize(tradeDate)).thenReturn(1);
 
         assertEquals(1, marketDailyTurnoverTask.synchronize(tradeDate, "TEST"));
+        org.mockito.Mockito.verify(marketDailyTurnoverService).findMissingTradeDates(
+                tradeDate.minusDays(30), tradeDate);
     }
 }

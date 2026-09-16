@@ -35,7 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 腾讯四指数日行情数据源。
+ * 腾讯五指数日行情数据源。
  */
 @Slf4j
 @Service
@@ -48,7 +48,7 @@ public class TencentIndexDailyQuoteSourceServiceImpl implements IndexDailyQuoteS
     private static final DateTimeFormatter QUOTE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     private static final Pattern QUOTE_PATTERN = Pattern.compile(
-            "v_(sh000016|sh000001|sz399102|sh000852)=\"([^\"]*)\";"
+            "v_(sh000016|sh000001|sz399102|sh000852|sh000300)=\"([^\"]*)\";"
     );
 
     private final RestTemplate restTemplate;
@@ -56,7 +56,7 @@ public class TencentIndexDailyQuoteSourceServiceImpl implements IndexDailyQuoteS
     private final RequestRateLimiter requestRateLimiter;
 
     /**
-     * 创建腾讯四指数日行情数据源。
+     * 创建腾讯五指数日行情数据源。
      */
     @Autowired
     public TencentIndexDailyQuoteSourceServiceImpl(
@@ -90,7 +90,7 @@ public class TencentIndexDailyQuoteSourceServiceImpl implements IndexDailyQuoteS
     }
 
     /**
-     * 一次请求四个固定指数，并按产品固定展示顺序返回。
+     * 一次请求五个固定指数，包含沪深300。
      */
     @Override
     public List<IndexDailyQuote> fetch(LocalDate tradeDate) {
@@ -101,7 +101,7 @@ public class TencentIndexDailyQuoteSourceServiceImpl implements IndexDailyQuoteS
         String responseText = new String(request(uri), TENCENT_CHARSET);
         Map<String, String[]> fieldsBySymbol = parseResponse(responseText);
         if (fieldsBySymbol.size() != IndexStyleIndex.values().length) {
-            throw new IllegalStateException("腾讯指数行情数量不完整，expected=4，actual="
+            throw new IllegalStateException("腾讯指数行情数量不完整，expected=5，actual="
                     + fieldsBySymbol.size());
         }
 
@@ -187,16 +187,16 @@ public class TencentIndexDailyQuoteSourceServiceImpl implements IndexDailyQuoteS
                 if (body == null || body.length == 0) {
                     throw new IllegalStateException("腾讯指数行情响应为空");
                 }
-                log.info("腾讯四指数行情请求完成，attempt={}，elapsedMs={}",
+                log.info("腾讯五指数行情请求完成，attempt={}，elapsedMs={}",
                         attempt, System.currentTimeMillis() - startTime);
                 return body;
             } catch (RestClientException exception) {
                 lastException = exception;
-                log.warn("腾讯四指数行情请求失败，attempt={}，reason={}",
+                log.warn("腾讯五指数行情请求失败，attempt={}，reason={}",
                         attempt, exception.getMessage());
             }
         }
-        throw new IllegalStateException("腾讯四指数行情请求失败", lastException);
+        throw new IllegalStateException("腾讯五指数行情请求失败", lastException);
     }
 
     private String requiredText(

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.List;
 
 /**
  * 每日市场成交额汇总任务。
@@ -38,6 +39,7 @@ public class MarketDailyTurnoverTask {
     @EventListener(ApplicationReadyEvent.class)
     @Order(22)
     public void synchronizeAfterStartup() {
+        reportRecentGaps(LocalDate.now(SHANGHAI_ZONE).minusDays(1));
         LocalTime currentTime = LocalTime.now(SHANGHAI_ZONE);
         if (!currentTime.isBefore(SCHEDULED_TIME)) {
             try {
@@ -61,6 +63,20 @@ public class MarketDailyTurnoverTask {
                     triggerType, tradeDate, System.currentTimeMillis() - startTime,
                     exception.getMessage(), exception);
             throw exception;
+        } finally {
+            reportRecentGaps(tradeDate);
+        }
+    }
+
+    private void reportRecentGaps(LocalDate endDate) {
+        try {
+            List<LocalDate> missingDates = marketDailyTurnoverService.findMissingTradeDates(
+                    endDate.minusDays(30), endDate);
+            if (!missingDates.isEmpty()) {
+                log.warn("最近31个自然日存在市场成交额汇总缺口，请核验原始日线后按日补算，missingDates={}", missingDates);
+            }
+        } catch (RuntimeException exception) {
+            log.warn("市场成交额历史缺口检查失败，endDate={}，reason={}", endDate, exception.getMessage());
         }
     }
 }

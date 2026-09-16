@@ -48,7 +48,7 @@ class IndexStyleCalculatorTest {
         List<LocalDate> tradeDates = tradeDates();
         List<IndexDailyQuote> quotes = new ArrayList<>();
         for (LocalDate tradeDate : tradeDates) {
-            for (IndexStyleIndex index : IndexStyleIndex.values()) {
+            for (IndexStyleIndex index : IndexStyleIndex.styleValues()) {
                 quotes.add(quote(index, tradeDate, 100));
             }
         }
@@ -65,7 +65,7 @@ class IndexStyleCalculatorTest {
         List<LocalDate> tradeDates = tradeDates();
         List<IndexDailyQuote> quotes = new ArrayList<>();
         for (LocalDate tradeDate : tradeDates) {
-            for (IndexStyleIndex index : IndexStyleIndex.values()) {
+            for (IndexStyleIndex index : IndexStyleIndex.styleValues()) {
                 quotes.add(quote(index, tradeDate, 100));
             }
         }

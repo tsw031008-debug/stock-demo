@@ -11,6 +11,15 @@
         WHERE trade_date = #{tradeDate}
     </select>
 
+    <!--校验指定股票批次的盘后正式采集覆盖，盘中、历史来源和PARTIAL记录不计入。-->
+    <select id="countCompleteByCodesAndCollectionRange" resultType="int">
+        SELECT COUNT(*) FROM stock_fund_flow
+        WHERE trade_date = #{tradeDate} AND data_source = 'EAST_MONEY' AND data_status = 'COMPLETE'
+          AND collected_at &gt;= #{startTime} AND collected_at &lt; #{endTime}
+          AND stock_code IN
+          <foreach collection="stockCodes" item="code" open="(" close=")" separator=",">#{code}</foreach>
+    </select>
+
     <!--分页查询指定交易日的资金流向原始数据-->
     <select id="selectPageByTradeDate"
             resultType="cn.djct.stockdemo.pojo.vo.StockFundFlowRespVo">

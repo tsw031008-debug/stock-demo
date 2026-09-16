@@ -30,7 +30,7 @@ public class StockDailyQuoteController {
      * 手动同步当天股票日行情。
      * @return 操作结果
      */
-    @Operation(summary = "手动同步当天股票日行情")
+    @Operation(summary = "手动同步当天股票日行情", description = "仅允许当天15:02及之后同步；盘中请求拒绝，数量齐全但非完整收盘行情时重新采集。")
     @PostMapping("/synchronize")
     public Result<StockDailyQuoteSynchronizeRespVo> synchronize() {
         //获得当前交易日

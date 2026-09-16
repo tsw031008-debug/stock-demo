@@ -172,7 +172,8 @@
     <!--按候选代码批次读取计算及查询所需的原始日线，不在SQL中计算指标。-->
     <select id="selectByStockCodesAndTradeDates" resultType="cn.djct.stockdemo.pojo.entity.StockDailyQuote">
         SELECT stock_code, stock_name, trade_date, open_price, high_price, low_price,
-               close_price, change_percent, turnover_amount_yuan, data_status
+               close_price, previous_close_price, change_percent, turnover_amount_yuan, turnover_rate, data_status,
+               quote_time, collected_at, data_source
         FROM stock_daily_quote
         WHERE stock_code IN
         <foreach collection="stockCodes" item="code" open="(" close=")" separator=",">#{code}</foreach>
@@ -184,5 +185,10 @@
     <!--最早记录仅用于历史完整性定位，不作为股票上市日期。-->
     <select id="selectFirstQuoteDate" resultType="java.time.LocalDate">
         SELECT MIN(trade_date) FROM stock_daily_quote WHERE stock_code = #{stockCode}
+    </select>
+    <!--统计指定股票截至计算日的已有日线日期数，排除未来记录，不过滤价格或状态。-->
+    <select id="countByStockCodeThroughTradeDate" resultType="int">
+        SELECT COUNT(DISTINCT trade_date) FROM stock_daily_quote
+        WHERE stock_code = #{stockCode} AND trade_date &lt;= #{tradeDate}
     </select>
 </mapper>

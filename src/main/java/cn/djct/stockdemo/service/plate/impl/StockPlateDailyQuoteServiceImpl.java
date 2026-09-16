@@ -16,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -78,7 +77,7 @@ public class StockPlateDailyQuoteServiceImpl implements StockPlateDailyQuoteServ
             throw new IllegalStateException("当前年份没有交易日，tradeDate=" + tradeDate);
         }
         boolean firstTradingDay = tradingDays.get(0).equals(tradeDate);
-        Map<Long, BigDecimal> previousClosePrices = firstTradingDay
+        Map<Long, StockPlateCloseDto> previousClosePrices = firstTradingDay
                 ? Map.of()
                 : loadClosePrices(tradingDays.get(tradingDays.size() - 2));
         List<StockDailyQuote> stockQuotes = stockDailyQuoteMapper.selectForPlateCalculation(tradeDate);
@@ -117,7 +116,7 @@ public class StockPlateDailyQuoteServiceImpl implements StockPlateDailyQuoteServ
             throw new IllegalStateException("当前年份没有交易日，endDate=" + endDate);
         }
         List<StockPlateMemberDto> members = requireMembers();
-        Map<Long, BigDecimal> previousClosePrices = new HashMap<>();
+        Map<Long, StockPlateCloseDto> previousClosePrices = new HashMap<>();
         int processedCount = 0;
         for (int index = 0; index < tradingDays.size(); index++) {
             LocalDate tradeDate = tradingDays.get(index);
@@ -164,10 +163,10 @@ public class StockPlateDailyQuoteServiceImpl implements StockPlateDailyQuoteServ
     /**
      * 查询指定交易日的板块收盘值并按板块ID建立索引。
      */
-    private Map<Long, BigDecimal> loadClosePrices(LocalDate tradeDate) {
-        Map<Long, BigDecimal> closePrices = new HashMap<>();
+    private Map<Long, StockPlateCloseDto> loadClosePrices(LocalDate tradeDate) {
+        Map<Long, StockPlateCloseDto> closePrices = new HashMap<>();
         for (StockPlateCloseDto close : stockPlateDailyQuoteMapper.selectCloseByTradeDate(tradeDate)) {
-            closePrices.put(close.getPlateId(), close.getClosePrice());
+            closePrices.put(close.getPlateId(), close);
         }
         return closePrices;
     }
@@ -175,10 +174,11 @@ public class StockPlateDailyQuoteServiceImpl implements StockPlateDailyQuoteServ
     /**
      * 将本次板块日线转换为下一交易日需要的前收索引。
      */
-    private Map<Long, BigDecimal> toClosePriceMap(List<StockPlateDailyQuote> quotes) {
-        Map<Long, BigDecimal> closePrices = new HashMap<>();
+    private Map<Long, StockPlateCloseDto> toClosePriceMap(List<StockPlateDailyQuote> quotes) {
+        Map<Long, StockPlateCloseDto> closePrices = new HashMap<>();
         for (StockPlateDailyQuote quote : quotes) {
-            closePrices.put(quote.getPlateId(), quote.getClosePrice());
+            closePrices.put(quote.getPlateId(), StockPlateCloseDto.builder().plateId(quote.getPlateId())
+                    .closePrice(quote.getClosePrice()).dataStatus(quote.getDataStatus()).build());
         }
         return closePrices;
     }

@@ -61,6 +61,14 @@ class IndexMinuteQuoteTaskTest {
         assertEquals(2, indexMinuteQuoteTask.recover(checkTime, "TEST"));
 
         verify(indexMinuteQuoteSyncService).recoverMissingMinutes(checkTime);
+        verify(indexDivergenceSignalService).recoverAndSave(checkTime);
+    }
+
+    @Test
+    void shouldRecoverSignalsEvenWhenMinutesAlreadyComplete() {
+        LocalDateTime checkTime = LocalDateTime.of(2026, 8, 27, 15, 2, 30);
+        assertEquals(0, indexMinuteQuoteTask.recover(checkTime, "TEST"));
+        verify(indexDivergenceSignalService).recoverAndSave(checkTime);
     }
 
     @Test

@@ -1,0 +1,76 @@
+package cn.djct.stockdemo.task;
+
+import cn.djct.stockdemo.service.stockalert.StrongTrendBreakoutService;
+import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+
+/** 交易日15:15触发强势趋势突破，计算和持久化由Service处理。 */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "stock.alert.strong-trend-breakout", name = "enabled", havingValue = "true")
+public class StrongTrendBreakoutTask {
+    private static final ZoneId SHANGHAI_ZONE = ZoneId.of("Asia/Shanghai");
+    private final StrongTrendBreakoutService strongTrendBreakoutService;
+    private final TradeCalendarService tradeCalendarService;
+
+    /** Service事务结束后释放锁；非交易日跳过。 */
+    @Scheduled(cron = "0 15 15 * * *", zone = "Asia/Shanghai")
+    public synchronized void selectOnSchedule() {
+        select(LocalDate.now(SHANGHAI_ZONE));
+    }
+
+    /** 日线启动补采完成后，补跑当天尚未成功的策略。 */
+    @EventListener(ApplicationReadyEvent.class)
+    @Order(32)
+    public void selectAfterStartup() {
+        LocalDateTime now = LocalDateTime.now(SHANGHAI_ZONE);
+        selectAfterStartup(now.toLocalDate(), now.toLocalTime());
+    }
+
+    synchronized void selectAfterStartup(LocalDate date, LocalTime time) {
+        if (time.isBefore(LocalTime.of(15, 15))) {
+            return;
+        }
+        try {
+            if (!tradeCalendarService.isTradingDay(date) || strongTrendBreakoutService.isCompleted(date)) {
+                return;
+            }
+            log.info("选股启动补跑，strategy=StrongTrendBreakout，tradeDate={}", date);
+            select(date);
+        } catch (RuntimeException exception) {
+            log.error("选股启动补跑失败，应用继续启动，strategy=StrongTrendBreakout，tradeDate={}，reason={}", date, exception.getMessage());
+        }
+
+    }
+
+    void select(LocalDate date) {
+        long started = System.currentTimeMillis();
+        log.info("强势趋势突破任务开始，tradeDate={}，startTime={}", date, LocalDateTime.now(SHANGHAI_ZONE));
+        try {
+            if (!tradeCalendarService.isTradingDay(date)) {
+                log.info("非交易日，强势趋势突破任务结束，tradeDate={}，status=SKIPPED，processedCount=0，endTime={}，elapsedMs={}",
+                        date, LocalDateTime.now(SHANGHAI_ZONE), System.currentTimeMillis() - started);
+                return;
+            }
+            int count = strongTrendBreakoutService.selectStocks(date);
+            log.info("强势趋势突破任务结束，tradeDate={}，status=COMPLETED，selectedCount={}，endTime={}，elapsedMs={}",
+                    date, count, LocalDateTime.now(SHANGHAI_ZONE), System.currentTimeMillis() - started);
+        } catch (RuntimeException exception) {
+            log.error("强势趋势突破任务结束，tradeDate={}，status=FAILED，endTime={}，elapsedMs={}，reason={}",
+                    date, LocalDateTime.now(SHANGHAI_ZONE), System.currentTimeMillis() - started, exception.getMessage());
+        }
+    }
+}

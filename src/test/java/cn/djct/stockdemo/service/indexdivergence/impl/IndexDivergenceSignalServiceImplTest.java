@@ -75,7 +75,7 @@ class IndexDivergenceSignalServiceImplTest {
     }
 
     @Test
-    void shouldReuseIncompletePreviousTradingDayCheck() {
+    void shouldRecheckIncompletePreviousTradingDay() {
         List<IndexMinuteQuote> quotes = completePreviousDayQuotes();
         quotes.remove(quotes.size() - 1);
         when(tradeCalendarService.getPreviousTradingDay(TRADE_DATE, 1))
@@ -89,8 +89,8 @@ class IndexDivergenceSignalServiceImplTest {
         assertEquals(0, service.calculateAndSave(CURRENT_MINUTE));
         assertEquals(0, service.calculateAndSave(CURRENT_MINUTE));
 
-        verify(tradeCalendarService, times(1)).getPreviousTradingDay(TRADE_DATE, 1);
-        verify(indexMinuteQuoteMapper, times(1)).selectByIndexCodeAndQuoteTimeRange(
+        verify(tradeCalendarService, times(2)).getPreviousTradingDay(TRADE_DATE, 1);
+        verify(indexMinuteQuoteMapper, times(2)).selectByIndexCodeAndQuoteTimeRange(
                 "000001",
                 LocalDateTime.of(PREVIOUS_TRADE_DATE, LocalTime.of(9, 31)),
                 CURRENT_MINUTE
@@ -210,6 +210,55 @@ class IndexDivergenceSignalServiceImplTest {
         assertEquals(0, service.calculateAndSave(CURRENT_MINUTE));
 
         verify(indexDivergenceSignalMapper, never()).upsertBatch(anyList());
+    }
+
+    @Test
+    void shouldResumeAfterCurrentDayGapIsFilled() {
+        List<IndexMinuteQuote> complete = completePreviousDayQuotes();
+        complete.addAll(currentDayQuotes());
+        List<IndexMinuteQuote> incomplete = new ArrayList<>(complete);
+        incomplete.remove(242);
+        when(tradeCalendarService.getPreviousTradingDay(TRADE_DATE, 1)).thenReturn(PREVIOUS_TRADE_DATE);
+        when(indexMinuteQuoteMapper.selectByIndexCodeAndQuoteTimeRange("000001",
+                PREVIOUS_TRADE_DATE.atTime(9, 31), CURRENT_MINUTE)).thenReturn(incomplete, complete);
+
+        assertEquals(0, service.calculateAndSave(CURRENT_MINUTE));
+        assertEquals(0, service.calculateAndSave(CURRENT_MINUTE));
+
+        verify(indexMacdCalculator).calculate(complete);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldRecoverEarlierSignalsWithoutSavingWarmupSignals() {
+        List<IndexMinuteQuote> quotes = completePreviousDayQuotes();
+        quotes.addAll(currentDayQuotes());
+        when(tradeCalendarService.isTradingDay(TRADE_DATE)).thenReturn(true);
+        when(tradeCalendarService.getPreviousTradingDay(TRADE_DATE, 1)).thenReturn(PREVIOUS_TRADE_DATE);
+        when(indexMinuteQuoteMapper.selectByIndexCodeAndQuoteTimeRange("000001",
+                PREVIOUS_TRADE_DATE.atTime(9, 31), CURRENT_MINUTE)).thenReturn(quotes);
+        List<IndexMacdDto> macd = List.of(macdItem(CURRENT_MINUTE));
+        when(indexMacdCalculator.calculate(quotes)).thenReturn(macd);
+        when(indexDivergenceSignalCalculator.detect(macd)).thenReturn(List.of(
+                signal(PREVIOUS_TRADE_DATE.atTime(14, 0)),
+                signal(CURRENT_MINUTE.minusMinutes(1)), signal(CURRENT_MINUTE)));
+        assertEquals(2, service.recoverAndSave(CURRENT_MINUTE));
+        ArgumentCaptor<List<IndexDivergenceSignal>> captor = ArgumentCaptor.forClass(List.class);
+        verify(indexDivergenceSignalMapper).upsertBatch(captor.capture());
+        assertEquals(List.of(CURRENT_MINUTE.minusMinutes(1), CURRENT_MINUTE),
+                captor.getValue().stream().map(IndexDivergenceSignal::getSignalTime).toList());
+    }
+
+    @Test
+    void shouldClampRecoveryAtLunchAndAfterClose() {
+        when(tradeCalendarService.isTradingDay(TRADE_DATE)).thenReturn(true);
+        when(tradeCalendarService.getPreviousTradingDay(TRADE_DATE, 1)).thenReturn(PREVIOUS_TRADE_DATE);
+        assertEquals(0, service.recoverAndSave(TRADE_DATE.atTime(12, 15)));
+        assertEquals(0, service.recoverAndSave(TRADE_DATE.atTime(15, 2)));
+        verify(indexMinuteQuoteMapper).selectByIndexCodeAndQuoteTimeRange(
+                "000001", PREVIOUS_TRADE_DATE.atTime(9, 31), TRADE_DATE.atTime(11, 30));
+        verify(indexMinuteQuoteMapper).selectByIndexCodeAndQuoteTimeRange(
+                "000001", PREVIOUS_TRADE_DATE.atTime(9, 31), TRADE_DATE.atTime(15, 0));
     }
 
     private List<IndexMinuteQuote> completePreviousDayQuotes() {

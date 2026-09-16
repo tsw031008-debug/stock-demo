@@ -2,6 +2,7 @@ package cn.djct.stockdemo.common;
 
 import cn.djct.stockdemo.pojo.vo.StockPlateLimitUpRespVo;
 import cn.djct.stockdemo.pojo.dto.StockPlateMemberDto;
+import cn.djct.stockdemo.pojo.dto.StockPlateCloseDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.pojo.entity.StockPlateDailyQuote;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +50,7 @@ class StockPlateCalculatorTest {
                 LocalDate.of(2026, 1, 6),
                 members(),
                 quotes(),
-                Map.of(1L, new BigDecimal("1050.0000")),
+                Map.of(1L, new StockPlateCloseDto(1L, new BigDecimal("1050.0000"), "COMPLETE")),
                 false,
                 "COMPLETE"
         );
@@ -58,6 +59,17 @@ class StockPlateCalculatorTest {
         assertEquals(new BigDecimal("1050.0000"), plate.getOpenPrice());
         assertEquals(new BigDecimal("1102.5000"), plate.getClosePrice());
         assertEquals("COMPLETE", plate.getDataStatus());
+    }
+
+    @Test
+    void shouldPreservePartialBaselineOnFollowingDay() {
+        List<StockPlateDailyQuote> result = calculator.calculateDailyQuotes(
+                LocalDate.of(2026, 8, 27), members(), quotes(),
+                Map.of(1L, new StockPlateCloseDto(1L, new BigDecimal("1050.0000"), "PARTIAL")),
+                false, "COMPLETE");
+        assertEquals(new BigDecimal("1102.5000"), result.get(0).getClosePrice());
+        assertEquals("PARTIAL", result.get(0).getDataStatus());
+        assertEquals("PARTIAL", result.get(1).getDataStatus());
     }
 
     @Test

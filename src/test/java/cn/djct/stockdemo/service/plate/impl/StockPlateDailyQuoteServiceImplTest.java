@@ -4,6 +4,7 @@ import cn.djct.stockdemo.common.StockPlateCalculator;
 import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
 import cn.djct.stockdemo.mapper.StockPlateDailyQuoteMapper;
 import cn.djct.stockdemo.pojo.dto.StockPlateMemberDto;
+import cn.djct.stockdemo.pojo.dto.StockPlateCloseDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.pojo.entity.StockPlateDailyQuote;
 import cn.djct.stockdemo.service.plate.StockPlateService;
@@ -98,7 +99,7 @@ class StockPlateDailyQuoteServiceImplTest {
         )).thenReturn(firstPlateQuotes);
         when(stockPlateCalculator.calculateDailyQuotes(
                 eq(END_DATE), eq(members), eq(secondStockQuotes),
-                eq(Map.of(1L, new BigDecimal("1010.0000"))), eq(false), eq("PARTIAL")
+                eq(Map.of(1L, new StockPlateCloseDto(1L, new BigDecimal("1010.0000"), "PARTIAL"))), eq(false), eq("PARTIAL")
         )).thenReturn(secondPlateQuotes);
         StockPlateDailyQuoteServiceImpl service = createService();
 
@@ -141,6 +142,7 @@ class StockPlateDailyQuoteServiceImplTest {
                 .plateName("科技-概")
                 .tradeDate(tradeDate)
                 .closePrice(new BigDecimal(closePrice))
+                .dataStatus("PARTIAL")
                 .build();
     }
 }

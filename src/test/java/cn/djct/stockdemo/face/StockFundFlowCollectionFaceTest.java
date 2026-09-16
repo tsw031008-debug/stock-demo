@@ -79,6 +79,8 @@ class StockFundFlowCollectionFaceTest {
         List<StockBasic> stocks = createStocks(3000);
         prepareStockBatches(stocks);
         when(stockFundFlowService.countByTradeDate(TRADE_DATE)).thenReturn(3000);
+        when(stockFundFlowService.hasClosingSnapshot(TRADE_DATE,
+                stocks.stream().map(StockBasic::getStockCode).toList())).thenReturn(true);
 
         assertEquals(0, collectionFace.synchronize(TRADE_DATE));
 
@@ -93,6 +95,19 @@ class StockFundFlowCollectionFaceTest {
         assertThrows(IllegalStateException.class, () -> collectionFace.synchronize(TRADE_DATE));
 
         verifyNoInteractions(stockFundFlowSourceService);
+    }
+
+    @Test
+    void shouldRefreshCountMatchedButIntradaySnapshot() {
+        List<StockBasic> stocks = createStocks(3000);
+        prepareStockBatches(stocks);
+        List<StockFundFlow> fundFlows = stocks.stream()
+                .map(stock -> StockFundFlow.builder().stockCode(stock.getStockCode()).tradeDate(TRADE_DATE).build())
+                .toList();
+        when(stockFundFlowService.countByTradeDate(TRADE_DATE)).thenReturn(3000);
+        when(stockFundFlowSourceService.fetchAll(TRADE_DATE, stocks)).thenReturn(fundFlows);
+        when(stockFundFlowService.saveSnapshot(fundFlows)).thenReturn(3000);
+        assertEquals(3000, collectionFace.synchronize(TRADE_DATE));
     }
 
     private void prepareStockBatches(List<StockBasic> stocks) {

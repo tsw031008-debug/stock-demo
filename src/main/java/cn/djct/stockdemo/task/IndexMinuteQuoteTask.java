@@ -106,8 +106,10 @@ public class IndexMinuteQuoteTask {
         long startTime = System.currentTimeMillis();
         try {
             int savedCount = indexMinuteQuoteSyncService.recoverMissingMinutes(checkTime);
-            log.info("上证指数分钟完整性检查完成，triggerType={}，checkTime={}，savedCount={}，elapsedMs={}",
-                    triggerType, checkTime, savedCount, System.currentTimeMillis() - startTime);
+            // 即使行情无需补录，也恢复此前行情入库后计算失败的信号。
+            int signalCount = indexDivergenceSignalService.recoverAndSave(checkTime);
+            log.info("上证指数分钟完整性检查完成，triggerType={}，checkTime={}，savedCount={}，signalCount={}，elapsedMs={}",
+                    triggerType, checkTime, savedCount, signalCount, System.currentTimeMillis() - startTime);
             return savedCount;
         } catch (RuntimeException exception) {
             log.error("上证指数分钟完整性检查失败，triggerType={}，checkTime={}，elapsedMs={}，reason={}",

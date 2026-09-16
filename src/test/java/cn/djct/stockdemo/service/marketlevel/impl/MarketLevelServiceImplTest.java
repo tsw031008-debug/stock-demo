@@ -1,9 +1,9 @@
 package cn.djct.stockdemo.service.marketlevel.impl;
 
 import cn.djct.stockdemo.common.MarketLevelCalculator;
-import cn.djct.stockdemo.mapper.StockDailyQuoteMapper;
+import cn.djct.stockdemo.mapper.MarketDailyTurnoverMapper;
 import cn.djct.stockdemo.pojo.vo.MarketLevelRespVo;
-import cn.djct.stockdemo.pojo.dto.MarketTurnoverRecordDto;
+import cn.djct.stockdemo.pojo.entity.MarketDailyTurnover;
 import cn.djct.stockdemo.service.marketlevel.MarketLevelSourceService;
 import cn.djct.stockdemo.service.tradecalendar.TradeCalendarService;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +32,7 @@ class MarketLevelServiceImplTest {
     private static final BigDecimal ONE_HUNDRED_MILLION = new BigDecimal("100000000");
 
     @Mock
-    private StockDailyQuoteMapper stockDailyQuoteMapper;
+    private MarketDailyTurnoverMapper marketDailyTurnoverMapper;
 
     @Mock
     private MarketLevelSourceService marketLevelSourceService;
@@ -62,7 +62,7 @@ class MarketLevelServiceImplTest {
         assertEquals(new BigDecimal("9000.00"), result.getCurrentTurnoverYi());
         assertEquals(new BigDecimal("8000.00"), result.getPreviousThreeDayAverageTurnoverYi());
         assertEquals(new BigDecimal("1.00"), result.getVolumeRatio());
-        verify(stockDailyQuoteMapper).selectMarketTurnoverRecords(historicalTradeDates(statisticsDate));
+        verify(marketDailyTurnoverMapper).selectCompleteByDateRange(statisticsDate.minusDays(5), statisticsDate.minusDays(1));
     }
 
     @Test
@@ -75,7 +75,7 @@ class MarketLevelServiceImplTest {
 
         service.getLatest();
 
-        verify(stockDailyQuoteMapper).selectMarketTurnoverRecords(historicalTradeDates(currentDate));
+        verify(marketDailyTurnoverMapper).selectCompleteByDateRange(currentDate.minusDays(5), currentDate.minusDays(1));
     }
 
     @Test
@@ -90,7 +90,7 @@ class MarketLevelServiceImplTest {
 
         service.getLatest();
 
-        verify(stockDailyQuoteMapper).selectMarketTurnoverRecords(historicalTradeDates(statisticsDate));
+        verify(marketDailyTurnoverMapper).selectCompleteByDateRange(statisticsDate.minusDays(5), statisticsDate.minusDays(1));
     }
 
     @Test
@@ -105,32 +105,41 @@ class MarketLevelServiceImplTest {
 
         service.getLatest();
 
-        verify(stockDailyQuoteMapper).selectMarketTurnoverRecords(historicalTradeDates(statisticsDate));
+        verify(marketDailyTurnoverMapper).selectCompleteByDateRange(statisticsDate.minusDays(5), statisticsDate.minusDays(1));
     }
 
     @Test
-    void shouldRejectMissingTurnoverAmountAfterServiceAggregation() {
+    void shouldRejectIncompleteDailySummaryBeforeRequestingSource() {
         LocalDate currentDate = LocalDate.of(2026, 8, 24);
         Clock clock = Clock.fixed(Instant.parse("2026-08-24T02:00:00Z"), SHANGHAI_ZONE);
         MarketLevelServiceImpl service = createService(clock);
         when(tradeCalendarService.isTradingDay(currentDate)).thenReturn(true);
         List<LocalDate> tradeDates = prepareHistoricalTradeDates(currentDate);
-        when(stockDailyQuoteMapper.selectMarketTurnoverRecords(tradeDates)).thenReturn(List.of(
-                turnoverRecord(tradeDates.get(0), amountYuan("7000")),
+        when(marketDailyTurnoverMapper.selectCompleteByDateRange(tradeDates.get(4), tradeDates.get(0))).thenReturn(List.of(
                 turnoverRecord(tradeDates.get(0), null),
                 turnoverRecord(tradeDates.get(1), amountYuan("8000")),
                 turnoverRecord(tradeDates.get(2), amountYuan("9000")),
                 turnoverRecord(tradeDates.get(3), amountYuan("10000")),
                 turnoverRecord(tradeDates.get(4), amountYuan("11000"))
         ));
-        when(marketLevelSourceService.fetchCurrentTurnoverAmountYuan()).thenReturn(amountYuan("9000"));
 
         assertThrows(IllegalStateException.class, service::getLatest);
     }
 
+    @Test
+    void shouldRejectMissingWholeDaySummary() {
+        LocalDate currentDate = LocalDate.of(2026, 8, 24);
+        MarketLevelServiceImpl service = createService(Clock.fixed(
+                Instant.parse("2026-08-24T02:00:00Z"), SHANGHAI_ZONE));
+        when(tradeCalendarService.isTradingDay(currentDate)).thenReturn(true);
+        prepareHistoricalTradeDates(currentDate);
+        assertThrows(IllegalStateException.class, service::getLatest);
+        org.mockito.Mockito.verifyNoInteractions(marketLevelSourceService);
+    }
+
     private MarketLevelServiceImpl createService(Clock clock) {
         return new MarketLevelServiceImpl(
-                stockDailyQuoteMapper,
+                marketDailyTurnoverMapper,
                 marketLevelSourceService,
                 tradeCalendarService,
                 marketLevelCalculator,
@@ -141,15 +150,12 @@ class MarketLevelServiceImplTest {
     private void prepareTurnovers(LocalDate statisticsDate) {
         when(marketLevelSourceService.fetchCurrentTurnoverAmountYuan()).thenReturn(amountYuan("9000"));
         List<LocalDate> tradeDates = prepareHistoricalTradeDates(statisticsDate);
-        List<MarketTurnoverRecordDto> records = new ArrayList<>();
+        List<MarketDailyTurnover> records = new ArrayList<>();
         String[] dailyTurnoversYi = {"7000", "8000", "9000", "10000", "11000"};
         for (int index = 0; index < tradeDates.size(); index++) {
-            BigDecimal halfAmountYuan = amountYuan(dailyTurnoversYi[index])
-                    .divide(BigDecimal.valueOf(2));
-            records.add(turnoverRecord(tradeDates.get(index), halfAmountYuan));
-            records.add(turnoverRecord(tradeDates.get(index), halfAmountYuan));
+            records.add(turnoverRecord(tradeDates.get(index), amountYuan(dailyTurnoversYi[index])));
         }
-        when(stockDailyQuoteMapper.selectMarketTurnoverRecords(tradeDates)).thenReturn(records);
+        when(marketDailyTurnoverMapper.selectCompleteByDateRange(tradeDates.get(4), tradeDates.get(0))).thenReturn(records);
     }
 
     private List<LocalDate> prepareHistoricalTradeDates(LocalDate statisticsDate) {
@@ -171,10 +177,11 @@ class MarketLevelServiceImplTest {
         );
     }
 
-    private MarketTurnoverRecordDto turnoverRecord(LocalDate tradeDate, BigDecimal amountYuan) {
-        return MarketTurnoverRecordDto.builder()
+    private MarketDailyTurnover turnoverRecord(LocalDate tradeDate, BigDecimal amountYuan) {
+        return MarketDailyTurnover.builder()
                 .tradeDate(tradeDate)
                 .turnoverAmountYuan(amountYuan)
+                .stockCount(5000).amountRecordCount(5000).dataStatus("COMPLETE")
                 .build();
     }
 

@@ -36,6 +36,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=50)
     parser.add_argument("--progress-every", type=int, default=20)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--expected-stock-count", type=int,
+                        help="单日历史补算时提供已独立核验的沪深股票数，不能使用实际返回条数冒充")
     parser.add_argument("--db-host", default=os.getenv("DB_HOST", "127.0.0.1"))
     parser.add_argument("--db-port", type=int, default=int(os.getenv("DB_PORT", "3306")))
     parser.add_argument("--db-name", default=os.getenv("DB_NAME", "stock_demo"))
@@ -47,6 +49,10 @@ def parse_args() -> argparse.Namespace:
         parser.error("start-date不能晚于end-date")
     if args.batch_size < 1 or args.progress_every < 1:
         parser.error("batch-size和progress-every必须大于0")
+    if args.expected_stock_count is not None and (
+        args.expected_stock_count < 1 or args.start_date is None or args.start_date != args.end_date
+    ):
+        parser.error("expected-stock-count必须为正数，且仅支持明确的单个交易日")
     if not os.getenv("DB_PASSWORD"):
         parser.error("请通过环境变量DB_PASSWORD提供数据库密码")
     return args
@@ -61,6 +67,8 @@ def connect_database(args: argparse.Namespace) -> pymysql.Connection:
         password=os.environ["DB_PASSWORD"],
         charset="utf8mb4",
         autocommit=False,
+        connect_timeout=5,
+        read_timeout=30,
         cursorclass=pymysql.cursors.DictCursor,
     )
 
@@ -110,10 +118,13 @@ def load_turnover_amounts(
         return [row["turnover_amount_yuan"] for row in cursor.fetchall()]
 
 
-def build_record(trade_date: date, amounts: list[Decimal | None]) -> tuple[Any, ...]:
+def build_record(trade_date: date, amounts: list[Decimal | None], expected_stock_count: int) -> tuple[Any, ...]:
     """校验完整性并在进程内汇总一个交易日。"""
     if not amounts:
         raise RuntimeError(f"没有沪深A股日行情，tradeDate={trade_date}")
+    if expected_stock_count <= 0 or len(amounts) != expected_stock_count:
+        raise RuntimeError(f"沪深A股覆盖不完整，tradeDate={trade_date}，"
+                           f"expected={expected_stock_count}，actual={len(amounts)}")
     if any(amount is None or amount < 0 for amount in amounts):
         raise RuntimeError(f"沪深A股成交额不完整，tradeDate={trade_date}")
     total = sum(amounts, Decimal("0"))
@@ -162,7 +173,25 @@ def main() -> int:
         pending: list[tuple[Any, ...]] = []
         saved = 0
         for index, trade_date in enumerate(trade_dates, start=1):
-            pending.append(build_record(trade_date, load_turnover_amounts(connection, trade_date)))
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT data_status FROM market_daily_turnover WHERE trade_date=%s", (trade_date,))
+                existing = cursor.fetchone()
+                if existing and existing["data_status"] == "COMPLETE":
+                    continue
+                cursor.execute("SELECT is_trading_day FROM trade_calendar WHERE market_code='CN_A' AND trade_date=%s",
+                               (trade_date,))
+                calendar = cursor.fetchone()
+                if not calendar or not calendar["is_trading_day"]:
+                    raise RuntimeError(f"日期不是已确认交易日：{trade_date}")
+                expected = args.expected_stock_count
+                if expected is None:
+                    cursor.execute("""SELECT COUNT(*) AS stock_count FROM stock_basic
+                        WHERE last_seen_trade_date=%s
+                        AND (stock_code LIKE '0%%' OR stock_code LIKE '3%%' OR stock_code LIKE '6%%')""", (trade_date,))
+                    expected = cursor.fetchone()["stock_count"]
+                if expected <= 0:
+                    raise RuntimeError(f"缺少{trade_date}历史股票清单；请核验后使用单日expected-stock-count参数")
+            pending.append(build_record(trade_date, load_turnover_amounts(connection, trade_date), expected))
             if len(pending) >= args.batch_size:
                 if not args.dry_run:
                     save_records(connection, pending)

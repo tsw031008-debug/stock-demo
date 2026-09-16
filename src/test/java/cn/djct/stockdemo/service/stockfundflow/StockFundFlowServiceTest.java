@@ -22,6 +22,20 @@ import static org.mockito.Mockito.when;
 class StockFundFlowServiceTest {
 
     @Test
+    void shouldRequireEveryCodeToHaveClosingFundFlow() {
+        StockFundFlowMapper stockFundFlowMapper = mock(StockFundFlowMapper.class);
+        TradeCalendarService tradeCalendarService = mock(TradeCalendarService.class);
+        StockFundFlowService stockFundFlowService = new StockFundFlowServiceImpl(
+                stockFundFlowMapper, tradeCalendarService);
+        LocalDate date = LocalDate.of(2026, 8, 21);
+        List<String> codes = List.of("600000", "000001");
+        when(stockFundFlowMapper.countCompleteByCodesAndCollectionRange(date, codes,
+                date.atTime(15, 20), date.plusDays(1).atStartOfDay())).thenReturn(1, 2);
+        org.junit.jupiter.api.Assertions.assertFalse(stockFundFlowService.hasClosingSnapshot(date, codes));
+        org.junit.jupiter.api.Assertions.assertTrue(stockFundFlowService.hasClosingSnapshot(date, codes));
+    }
+
+    @Test
     void shouldRejectMixedTradeDates() {
         StockFundFlowMapper mapper = mock(StockFundFlowMapper.class);
         TradeCalendarService tradeCalendarService = mock(TradeCalendarService.class);

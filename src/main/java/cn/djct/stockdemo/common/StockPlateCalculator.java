@@ -2,6 +2,7 @@ package cn.djct.stockdemo.common;
 
 import cn.djct.stockdemo.pojo.vo.StockPlateLimitUpRespVo;
 import cn.djct.stockdemo.pojo.dto.StockPlateMemberDto;
+import cn.djct.stockdemo.pojo.dto.StockPlateCloseDto;
 import cn.djct.stockdemo.pojo.entity.StockDailyQuote;
 import cn.djct.stockdemo.pojo.entity.StockPlateDailyQuote;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +50,7 @@ public class StockPlateCalculator {
             LocalDate tradeDate,
             List<StockPlateMemberDto> members,
             List<StockDailyQuote> stockQuotes,
-            Map<Long, BigDecimal> previousClosePrices,
+            Map<Long, StockPlateCloseDto> previousClosePrices,
             boolean firstTradingDay,
             String requestedStatus
     ) {
@@ -85,8 +86,12 @@ public class StockPlateCalculator {
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             // 年初首日从1000开始；缺少前收的新增板块同样从1000开始并标记为部分数据
-            BigDecimal previousClose = previousClosePrices.get(plate.plateId());
+            StockPlateCloseDto previous = previousClosePrices.get(plate.plateId());
+            BigDecimal previousClose = previous == null ? null : previous.getClosePrice();
             boolean missingPreviousClose = !firstTradingDay && previousClose == null;
+            // 累计价格继承前收基准的完整性，不能在次日掩盖历史缺口。
+            boolean incompleteBaseline = !firstTradingDay
+                    && (missingPreviousClose || !"COMPLETE".equals(previous.getDataStatus()));
             BigDecimal openPrice = firstTradingDay || missingPreviousClose
                     ? INITIAL_INDEX_VALUE
                     : previousClose;
@@ -107,7 +112,7 @@ public class StockPlateCalculator {
                     .turnoverAmountYuan(turnoverAmountYuan.setScale(2, RoundingMode.HALF_UP))
                     .stockCount(validQuotes.size())
                     .dataSource(DATA_SOURCE)
-                    .dataStatus(missingPreviousClose ? "PARTIAL" : requestedStatus)
+                    .dataStatus(incompleteBaseline ? "PARTIAL" : requestedStatus)
                     .build());
         }
         return result;

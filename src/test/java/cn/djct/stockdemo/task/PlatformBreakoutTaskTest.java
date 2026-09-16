@@ -16,6 +16,37 @@ class PlatformBreakoutTaskTest {
     private final PlatformBreakoutTask task = new PlatformBreakoutTask(service, calendar);
 
     @Test
+    void shouldCatchUpOnlyAfter1515OnUnfinishedTradingDay() {
+        LocalDate date = LocalDate.of(2026, 9, 10);
+        task.selectAfterStartup(date, java.time.LocalTime.of(15, 14, 59));
+        verifyNoInteractions(service, calendar);
+        task.selectAfterStartup(date, java.time.LocalTime.of(16, 0));
+        verifyNoInteractions(service);
+        when(calendar.isTradingDay(date)).thenReturn(true);
+        when(service.isCompleted(date)).thenReturn(true);
+        task.selectAfterStartup(date, java.time.LocalTime.of(16, 0));
+        verify(service, never()).selectStocks(any());
+        when(service.isCompleted(date)).thenReturn(false);
+        task.selectAfterStartup(date, java.time.LocalTime.of(15, 15));
+        verify(service).selectStocks(date);
+    }
+
+    @Test
+    void shouldContainStartupFailuresAndRunAfterDailyQuoteStartup() throws Exception {
+        LocalDate date = LocalDate.of(2026, 9, 10);
+        when(calendar.isTradingDay(date)).thenReturn(true);
+        when(service.isCompleted(date)).thenThrow(new IllegalStateException("数据库异常"));
+        assertDoesNotThrow(() -> task.selectAfterStartup(date, java.time.LocalTime.of(16, 0)));
+        var method = PlatformBreakoutTask.class.getMethod("selectAfterStartup");
+        assertTrue(method.isAnnotationPresent(org.springframework.context.event.EventListener.class));
+        int dailyOrder = StockDailyQuoteTask.class.getMethod("synchronizeAfterStartup")
+                .getAnnotation(org.springframework.core.annotation.Order.class).value();
+        assertTrue(method.getAnnotation(org.springframework.core.annotation.Order.class).value() > dailyOrder);
+        assertTrue(java.lang.reflect.Modifier.isSynchronized(PlatformBreakoutTask.class
+                .getDeclaredMethod("selectAfterStartup", LocalDate.class, java.time.LocalTime.class).getModifiers()));
+    }
+
+    @Test
     void shouldSkipWeekendAndHoliday() {
         task.select(LocalDate.of(2026, 9, 12));
         task.select(LocalDate.of(2026, 1, 1));

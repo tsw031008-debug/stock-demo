@@ -47,6 +47,9 @@ class IndexStyleControllerTest {
     @MockBean
     private cn.djct.stockdemo.mapper.StockSelectionRunMapper stockSelectionRunMapper;
 
+    @MockBean
+    private cn.djct.stockdemo.service.indexstyle.StockIndexDifferenceService stockIndexDifferenceService;
+
     @Autowired
     private MockMvc mockMvc;
     @MockBean
@@ -136,5 +139,42 @@ class IndexStyleControllerTest {
                 .andExpect(jsonPath("$.data.baseTradeDate").value("2026-08-28"))
                 .andExpect(jsonPath("$.data.etfs[0].etfCode").value("510050"))
                 .andExpect(jsonPath("$.data.etfs[0].changePercent").value(2.35));
+    }
+    @Test
+    void shouldReturnDifferenceDistributionAndNullEmptyPie() throws Exception {
+        LocalDate date = LocalDate.of(2026, 9, 14);
+        LocalDate previous = LocalDate.of(2026, 9, 11);
+        var response = new cn.djct.stockdemo.common.StockIndexDifferenceCalculator().calculate(
+                date, previous, BigDecimal.ONE, BigDecimal.ONE, List.of(
+                        new cn.djct.stockdemo.pojo.dto.StockClosePriceDto("000001", date, new BigDecimal("108")),
+                        new cn.djct.stockdemo.pojo.dto.StockClosePriceDto("000001", previous, new BigDecimal("100"))));
+        when(stockIndexDifferenceService.findByTradeDate(date)).thenReturn(response);
+        mockMvc.perform(get("/api/indexStyle/stockDifference").param("tradeDate", "2026-09-14"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.tradeDate").value("2026-09-14"))
+                .andExpect(jsonPath("$.data.previousTradeDate").value("2026-09-11"))
+                .andExpect(jsonPath("$.data.strong.length()").value(4))
+                .andExpect(jsonPath("$.data.strong[3].count").value(1))
+                .andExpect(jsonPath("$.data.strong[0].piePercent").value(25.0))
+                .andExpect(jsonPath("$.data.weak[0].piePercent").value(org.hamcrest.Matchers.nullValue()));
+    }
+
+    @Test
+    void shouldRejectMalformedDifferenceDate() throws Exception {
+        mockMvc.perform(get("/api/indexStyle/stockDifference").param("tradeDate", "invalid"))
+                .andExpect(jsonPath("$.message").value("日期格式必须为yyyy-MM-dd：tradeDate"));
+        org.mockito.Mockito.verifyNoInteractions(stockIndexDifferenceService);
+    }
+
+    @Test
+    void shouldReportMissingDifferenceDateAndMissingData() throws Exception {
+        mockMvc.perform(get("/api/indexStyle/stockDifference"))
+                .andExpect(jsonPath("$.message").value("请求参数不能为空：tradeDate"));
+        org.mockito.Mockito.verifyNoInteractions(stockIndexDifferenceService);
+        LocalDate date = LocalDate.of(2026, 9, 14);
+        when(stockIndexDifferenceService.findByTradeDate(date))
+                .thenThrow(new IllegalStateException("沪深300收盘行情缺失或无效：2026-09-14"));
+        mockMvc.perform(get("/api/indexStyle/stockDifference").param("tradeDate", "2026-09-14"))
+                .andExpect(jsonPath("$.message").value("沪深300收盘行情缺失或无效：2026-09-14"));
     }
 }

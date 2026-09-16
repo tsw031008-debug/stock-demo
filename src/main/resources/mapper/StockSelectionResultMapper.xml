@@ -32,4 +32,14 @@
         ORDER BY r.stock_code
         LIMIT #{limit} OFFSET #{offset}
     </select>
+    <!--按指定日换手率降序及代码升序分页；保留行情缺失记录供Service校验。-->
+    <select id="selectPageByTurnoverRate" resultType="cn.djct.stockdemo.pojo.vo.LeftSideStockRespVo">
+        SELECT r.stock_code, r.stock_name, q.open_price, q.high_price, q.low_price,
+               q.close_price, q.change_percent, q.turnover_amount_yuan
+        FROM stock_selection_result r
+        LEFT JOIN stock_daily_quote q ON q.stock_code = r.stock_code AND q.trade_date = r.trade_date
+        WHERE r.trade_date = #{tradeDate} AND r.strategy_type = #{strategyType}
+        ORDER BY q.turnover_rate DESC, r.stock_code ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
 </mapper>

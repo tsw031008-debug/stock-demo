@@ -34,7 +34,7 @@ class IndexDailyQuoteSyncServiceImplTest {
     private IndexDailyQuoteSyncServiceImpl syncService;
 
     @Test
-    void shouldSaveFourCompleteIndexQuotes() {
+    void shouldSaveFiveCompleteIndexQuotes() {
         LocalDate tradeDate = LocalDate.of(2026, 9, 3);
         List<IndexDailyQuote> quotes = Arrays.stream(IndexStyleIndex.values())
                 .map(index -> quote(index, tradeDate))
@@ -42,7 +42,7 @@ class IndexDailyQuoteSyncServiceImplTest {
         when(tradeCalendarService.isTradingDay(tradeDate)).thenReturn(true);
         when(sourceService.fetch(tradeDate)).thenReturn(quotes);
 
-        assertEquals(4, syncService.synchronize(tradeDate));
+        assertEquals(5, syncService.synchronize(tradeDate));
         verify(indexDailyQuoteMapper).upsertBatch(quotes);
     }
 
@@ -53,6 +53,17 @@ class IndexDailyQuoteSyncServiceImplTest {
 
         assertEquals(0, syncService.synchronize(tradeDate));
         verify(sourceService, never()).fetch(tradeDate);
+    }
+
+    @Test
+    void shouldRejectBatchWithoutCsi300() {
+        LocalDate tradeDate = LocalDate.of(2026, 9, 14);
+        when(tradeCalendarService.isTradingDay(tradeDate)).thenReturn(true);
+        when(sourceService.fetch(tradeDate)).thenReturn(Arrays.stream(IndexStyleIndex.styleValues())
+                .map(index -> quote(index, tradeDate)).toList());
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+                () -> syncService.synchronize(tradeDate));
+        org.mockito.Mockito.verifyNoInteractions(indexDailyQuoteMapper);
     }
 
     private IndexDailyQuote quote(IndexStyleIndex index, LocalDate tradeDate) {

@@ -18,4 +18,5 @@ public class StockPlateCloseDto {
 
     private Long plateId;
     private BigDecimal closePrice;
+    private String dataStatus;
 }

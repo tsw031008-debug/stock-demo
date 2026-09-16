@@ -72,7 +72,8 @@
             resultType="cn.djct.stockdemo.pojo.dto.StockPlateCloseDto">
         SELECT
             plate_id,
-            close_price
+            close_price,
+            data_status
         FROM stock_plate_daily_quote
         WHERE trade_date = #{tradeDate}
         ORDER BY plate_id

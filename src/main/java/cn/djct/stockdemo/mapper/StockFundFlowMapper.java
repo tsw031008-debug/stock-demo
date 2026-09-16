@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -21,6 +22,11 @@ public interface StockFundFlowMapper {
      * @return 记录数
      */
     int countByTradeDate(@Param("tradeDate") LocalDate tradeDate);
+
+    /** 统计指定股票中当天盘后采集的完整东方财富记录，用于同步完成校验。 */
+    int countCompleteByCodesAndCollectionRange(@Param("tradeDate") LocalDate tradeDate,
+            @Param("stockCodes") List<String> stockCodes,
+            @Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
 
     /**
      * 分页查询指定交易日的资金流向原始数据。

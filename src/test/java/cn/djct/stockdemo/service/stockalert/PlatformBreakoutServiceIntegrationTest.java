@@ -145,12 +145,12 @@ class PlatformBreakoutServiceIntegrationTest {
         seed("000001", "完整行情");
         seed("000002", "历史不足");
         jdbc.update("DELETE FROM stock_daily_quote WHERE stock_code='000002' AND trade_date < ?", dates.get(10));
-        assertEquals(1, service.selectStocks(DATE));
+        assertEquals(2, service.selectStocks(DATE));
         jdbc.update("DELETE FROM stock_daily_quote WHERE stock_code='000002' AND trade_date = ?", dates.get(20));
         assertEquals(1, service.selectStocks(DATE));
         quoteMapper.upsertBatch(List.of(quote("000002", dates.get(20), 20)));
         quoteMapper.upsertBatch(List.of(quote("000002", dates.get(0).minusDays(3), 0)));
-        assertEquals(1, service.selectStocks(DATE));
+        assertEquals(2, service.selectStocks(DATE));
         seed("000002", "历史价格异常");
         jdbc.update("UPDATE stock_daily_quote SET high_price=NULL WHERE stock_code='000002' AND trade_date=?", dates.get(20));
         assertEquals(1, service.selectStocks(DATE));
@@ -164,7 +164,7 @@ class PlatformBreakoutServiceIntegrationTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"PARTIAL", "MISSING", "ZERO_PRICE", "NULL_HIGH", "NULL_CHANGE", "NEGATIVE_AMOUNT"})
-    void shouldRejectIncompleteTodayWithoutSavingResults(String kind) {
+    void shouldSkipIncompleteTodayAndKeepHealthyStocks(String kind) {
         seed("000001", "甲");
         switch (kind) {
             case "PARTIAL" -> jdbc.update("UPDATE stock_daily_quote SET data_status='PARTIAL' WHERE trade_date=?", DATE);
@@ -174,14 +174,15 @@ class PlatformBreakoutServiceIntegrationTest {
             case "NULL_CHANGE" -> jdbc.update("UPDATE stock_daily_quote SET change_percent=NULL WHERE trade_date=?", DATE);
             case "NEGATIVE_AMOUNT" -> jdbc.update("UPDATE stock_daily_quote SET turnover_amount_yuan=-1 WHERE trade_date=?", DATE);
         }
-        assertThrows(IllegalStateException.class, () -> service.selectStocks(DATE));
-        assertFalse(runMapper.isCompleted(DATE, STRATEGY));
-        assertEquals(0, resultMapper.countResults(DATE, STRATEGY));
+        seed("000002", "正常股票");
+        assertEquals(1, service.selectStocks(DATE));
+        assertTrue(runMapper.isCompleted(DATE, STRATEGY));
+        assertEquals("000002", service.findByTradeDate(DATE, 1, 20).getRecords().get(0).getStockCode());
     }
 
     @Test
-    void shouldRollBackDeletedResultsAndNewBatchWhenLaterBatchFails() {
-        // 101只股票跨越100只的批次边界，先写入一批后第二批失败必须整体回滚。
+    void shouldRollBackDeletedResultsWhenDatabaseWriteFails() {
+        // 101只股票跨越批次边界，重算写入遇到数据库约束失败时保留旧结果。
         List<StockBasic> stocks = new ArrayList<>();
         for (int i = 0; i < 101; i++) {
             String code = String.format("%06d", i);
@@ -192,8 +193,13 @@ class PlatformBreakoutServiceIntegrationTest {
         seed("000000", "旧结果");
         assertEquals(1, service.selectStocks(DATE));
         seed("000001", "新增结果");
-        jdbc.update("DELETE FROM stock_daily_quote WHERE stock_code='000100'");
-        assertThrows(IllegalStateException.class, () -> service.selectStocks(DATE));
+        // 制造实际数据库写入失败：增加约束拒绝新增候选，验证旧结果及首批写入回滚。
+        jdbc.execute("ALTER TABLE stock_selection_result ADD CONSTRAINT reject_new_candidate CHECK (stock_code <> '000001')");
+        try {
+            assertThrows(org.springframework.dao.DataAccessException.class, () -> service.selectStocks(DATE));
+        } finally {
+            jdbc.execute("ALTER TABLE stock_selection_result DROP CONSTRAINT reject_new_candidate");
+        }
         assertTrue(runMapper.isCompleted(DATE, STRATEGY));
         assertEquals(1, resultMapper.countResults(DATE, STRATEGY));
         assertEquals("000000", service.findByTradeDate(DATE, 1, 20).getRecords().get(0).getStockCode());
@@ -223,6 +229,26 @@ class PlatformBreakoutServiceIntegrationTest {
         seed("000001", "甲");
         when(calendar.getTradingDays(dates.get(0), DATE)).thenReturn(dates.subList(1, 200));
         assertThrows(IllegalStateException.class, () -> service.selectStocks(DATE));
+    }
+
+    @Test
+    void shouldSkipStBeforePriceValidationAndRejectEntirelyUnavailableDay() {
+        seed("000016", "*ST康佳A");
+        jdbc.update("UPDATE stock_daily_quote SET open_price=0,high_price=0,low_price=0,turnover_amount_yuan=0 WHERE trade_date=?", DATE);
+        seed("000001", "正常股票");
+        assertEquals(1, service.selectStocks(DATE));
+        jdbc.update("DELETE FROM stock_daily_quote WHERE trade_date=?", DATE);
+        assertThrows(IllegalStateException.class, () -> service.selectStocks(DATE));
+        assertEquals(1, resultMapper.countResults(DATE, STRATEGY));
+    }
+
+    @Test
+    void shouldAcceptSixtyDaysButSkipFiftyNineAndInternalGaps() {
+        seed("000001", "六十日");
+        jdbc.update("DELETE FROM stock_daily_quote WHERE trade_date < ?", dates.get(140));
+        assertEquals(1, service.selectStocks(DATE));
+        jdbc.update("DELETE FROM stock_daily_quote WHERE trade_date = ?", dates.get(140));
+        assertEquals(0, service.selectStocks(DATE));
     }
 
     private void seed(String code, String name) {

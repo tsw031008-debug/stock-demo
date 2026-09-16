@@ -111,6 +111,12 @@ class StockAlertControllerTest {
     private cn.djct.stockdemo.service.stockalert.PlatformBreakoutService platformBreakoutService;
 
     @MockBean
+    private cn.djct.stockdemo.service.stockalert.StrongTrendBreakoutService strongTrendBreakoutService;
+
+    @MockBean
+    private cn.djct.stockdemo.service.stockalert.StrongStockPullbackService strongStockPullbackService;
+
+    @MockBean
     private cn.djct.stockdemo.mapper.StockSelectionResultMapper stockSelectionResultMapper;
 
     @MockBean
@@ -283,6 +289,44 @@ class StockAlertControllerTest {
                 .andExpect(jsonPath("$.data.hotStocks[0].stockName").value("科技一"))
                 .andExpect(jsonPath("$.data.potentialStocks[0].stockCode").value("600000"));
         verify(technologyStockRankingService).getLatest();
+    }
+
+    @Test
+    void shouldQueryStrongStockPullbackWithSimpleDateAndPagination() throws Exception {
+        var date = java.time.LocalDate.of(2026, 9, 10);
+        when(strongStockPullbackService.findByTradeDate(date, 1, 20)).thenReturn(
+                PageRespVo.<cn.djct.stockdemo.pojo.vo.LeftSideStockRespVo>builder()
+                        .pageNum(1).pageSize(20).total(0).records(List.of()).build());
+        mockMvc.perform(get("/api/stockAlert/strongStockPullback").param("tradeDate", "2026-09-10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(0))
+                .andExpect(jsonPath("$.data.records").isEmpty());
+        verify(strongStockPullbackService).findByTradeDate(date, 1, 20);
+        mockMvc.perform(get("/api/stockAlert/strongStockPullback"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(cn.djct.stockdemo.constant.ResultCode.OPERATION_ERROR));
+        mockMvc.perform(get("/api/stockAlert/strongStockPullback").param("tradeDate", "invalid"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(cn.djct.stockdemo.constant.ResultCode.OPERATION_ERROR));
+    }
+
+    @Test
+    void shouldQueryStrongTrendBreakoutWithSimpleDateAndPagination() throws Exception {
+        var date = java.time.LocalDate.of(2026, 9, 10);
+        when(strongTrendBreakoutService.findByTradeDate(date, 1, 20)).thenReturn(
+                PageRespVo.<cn.djct.stockdemo.pojo.vo.LeftSideStockRespVo>builder()
+                        .pageNum(1).pageSize(20).total(0).records(List.of()).build());
+        mockMvc.perform(get("/api/stockAlert/strongTrendBreakout").param("tradeDate", "2026-09-10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(0))
+                .andExpect(jsonPath("$.data.records").isEmpty());
+        verify(strongTrendBreakoutService).findByTradeDate(date, 1, 20);
+        mockMvc.perform(get("/api/stockAlert/strongTrendBreakout"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(cn.djct.stockdemo.constant.ResultCode.OPERATION_ERROR));
+        mockMvc.perform(get("/api/stockAlert/strongTrendBreakout").param("tradeDate", "invalid"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(cn.djct.stockdemo.constant.ResultCode.OPERATION_ERROR));
     }
 
     private TechnologyStockRankRespVo rank(int rank, String stockCode, String stockName) {

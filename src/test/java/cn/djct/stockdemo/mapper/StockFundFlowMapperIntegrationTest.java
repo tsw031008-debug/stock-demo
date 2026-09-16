@@ -54,6 +54,18 @@ class StockFundFlowMapperIntegrationTest {
         assertEquals(1, page.size());
         assertEquals("600000", page.get(0).getStockCode());
         assertEquals(0, new BigDecimal("300.00").compareTo(page.get(0).getMainNetInflowYuan()));
+
+        assertEquals(0, stockFundFlowMapper.countCompleteByCodesAndCollectionRange(tradeDate,
+                List.of("600000", "000001"), tradeDate.atTime(15, 20), tradeDate.plusDays(1).atStartOfDay()));
+        StockFundFlow closing = createFundFlow("600000", tradeDate, "350.00");
+        closing.setCollectedAt(tradeDate.atTime(15, 20));
+        stockFundFlowMapper.upsertBatch(List.of(closing));
+        assertEquals(1, stockFundFlowMapper.countCompleteByCodesAndCollectionRange(tradeDate,
+                List.of("600000", "000001"), tradeDate.atTime(15, 20), tradeDate.plusDays(1).atStartOfDay()));
+        closing.setDataStatus("PARTIAL");
+        stockFundFlowMapper.upsertBatch(List.of(closing));
+        assertEquals(0, stockFundFlowMapper.countCompleteByCodesAndCollectionRange(tradeDate,
+                List.of("600000"), tradeDate.atTime(15, 20), tradeDate.plusDays(1).atStartOfDay()));
     }
 
     private StockFundFlow createFundFlow(

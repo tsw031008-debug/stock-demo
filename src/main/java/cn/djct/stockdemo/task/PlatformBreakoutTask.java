@@ -6,10 +6,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 
 /** 交易日15:15触发平台突破，计算和持久化由Service处理。 */
@@ -22,10 +26,34 @@ public class PlatformBreakoutTask {
     private final PlatformBreakoutService platformBreakoutService;
     private final TradeCalendarService tradeCalendarService;
 
-    /** 单机串行触发，Service事务结束后释放锁；非交易日跳过。 */
+    /** Service事务结束后释放锁；非交易日跳过。 */
     @Scheduled(cron = "0 15 15 * * *", zone = "Asia/Shanghai")
     public synchronized void selectOnSchedule() {
         select(LocalDate.now(SHANGHAI_ZONE));
+    }
+
+    /** 日线启动补采完成后，补跑当天尚未成功的策略。 */
+    @EventListener(ApplicationReadyEvent.class)
+    @Order(30)
+    public void selectAfterStartup() {
+        LocalDateTime now = LocalDateTime.now(SHANGHAI_ZONE);
+        selectAfterStartup(now.toLocalDate(), now.toLocalTime());
+    }
+
+    synchronized void selectAfterStartup(LocalDate date, LocalTime time) {
+        if (time.isBefore(LocalTime.of(15, 15))) {
+            return;
+        }
+        try {
+            if (!tradeCalendarService.isTradingDay(date) || platformBreakoutService.isCompleted(date)) {
+                return;
+            }
+            log.info("选股启动补跑，strategy=PlatformBreakout，tradeDate={}", date);
+            select(date);
+        } catch (RuntimeException exception) {
+            log.error("选股启动补跑失败，应用继续启动，strategy=PlatformBreakout，tradeDate={}，reason={}", date, exception.getMessage());
+        }
+
     }
 
     void select(LocalDate date) {

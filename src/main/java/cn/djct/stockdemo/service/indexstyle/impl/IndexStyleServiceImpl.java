@@ -102,7 +102,7 @@ public class IndexStyleServiceImpl implements IndexStyleService {
         }
 
         //获取需要统计的完整指数代码
-        List<String> indexCodes = Arrays.stream(IndexStyleIndex.values())
+        List<String> indexCodes = Arrays.stream(IndexStyleIndex.styleValues())
                 .map(IndexStyleIndex::getIndexCode)
                 .toList();
         List<LocalDate> storedTradeDates = useCurrentQuote
@@ -116,7 +116,9 @@ public class IndexStyleServiceImpl implements IndexStyleService {
         );
         if (useCurrentQuote) {
             // 今日实时指数行情只参与本次强弱计算，不作为最终收盘行情入库。
-            quotes.addAll(sourceService.fetch(currentDate));
+            quotes.addAll(sourceService.fetch(currentDate).stream()
+                    .filter(quote -> indexCodes.contains(quote.getIndexCode()))
+                    .toList());
         }
         return IndexStyleComparisonDto.builder()
                 .statisticsDate(statisticsDate)

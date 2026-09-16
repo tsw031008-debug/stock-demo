@@ -60,8 +60,17 @@ class StockDailyQuoteCollectionFaceTest {
 
     @Test
     void shouldSkipWhenTodayIsAlreadyComplete() {
+        List<StockBasic> stocks = createStocks(3000);
         when(stockBasicService.countSnapshot(TRADE_DATE)).thenReturn(3000);
         when(stockDailyQuoteService.countByTradeDate(TRADE_DATE)).thenReturn(3000);
+        String lastCode = "";
+        for (int start = 0; start < stocks.size(); start += 1000) {
+            List<StockBasic> batch = stocks.subList(start, start + 1000);
+            when(stockBasicService.findSnapshotBatch(TRADE_DATE, lastCode, 1000)).thenReturn(batch);
+            when(stockDailyQuoteService.hasClosingQuotes(TRADE_DATE,
+                    batch.stream().map(StockBasic::getStockCode).toList())).thenReturn(true);
+            lastCode = batch.get(999).getStockCode();
+        }
 
         assertEquals(0, collectionFace.synchronize(TRADE_DATE));
 
@@ -76,6 +85,16 @@ class StockDailyQuoteCollectionFaceTest {
         when(stockDailyQuoteService.saveSnapshot(quotes)).thenReturn(3000);
 
         assertEquals(3000, collectionFace.synchronize(TRADE_DATE));
+    }
+
+    @Test
+    void shouldRefreshIntradayRowsEvenWhenCountMatches() {
+        List<StockBasic> stocks = createStocks(3000);
+        List<StockDailyQuote> quotes = createQuotes(stocks);
+        prepareCollection(stocks, quotes, 3000);
+        when(stockDailyQuoteService.saveSnapshot(quotes)).thenReturn(3000);
+        assertEquals(3000, collectionFace.synchronize(TRADE_DATE));
+        verify(stockDailyQuoteService).saveSnapshot(quotes);
     }
 
     @Test

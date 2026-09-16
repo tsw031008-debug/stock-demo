@@ -11,10 +11,10 @@ import java.util.List;
 public interface IndexDailyQuoteSourceService {
 
     /**
-     * 获取四个固定指数在指定交易日的收盘行情。
+     * 获取五个固定指数在指定交易日的收盘行情。
      *
      * @param tradeDate 预期交易日
-     * @return 四个指数的日行情
+     * @return 五个指数的日行情
      */
     List<IndexDailyQuote> fetch(LocalDate tradeDate);
 }

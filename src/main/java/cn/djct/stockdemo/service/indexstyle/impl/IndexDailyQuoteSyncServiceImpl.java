@@ -29,7 +29,7 @@ public class IndexDailyQuoteSyncServiceImpl implements IndexDailyQuoteSyncServic
     private final IndexDailyQuoteMapper indexDailyQuoteMapper;
 
     /**
-     * 交易日收盘后同步四个固定指数，任一指数缺失时整批拒绝保存。
+     * 交易日收盘后同步五个固定指数，任一指数缺失时整批拒绝保存。
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
